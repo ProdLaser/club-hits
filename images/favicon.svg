@@ -1,0 +1,45 @@
+
+from pathlib import Path
+import re
+
+pages = [
+    "index.html",
+    "hiphop.html",
+    "RnB.html"
+]
+
+favicon = (
+    '<link rel="icon" type="image/svg+xml" '
+    'href="images/favicon.svg">'
+)
+
+for filename in pages:
+    path = Path(filename)
+
+    if not path.exists():
+        print(f"ERROR: {filename} not found")
+        continue
+
+    html = path.read_text(encoding="utf-8")
+
+    # 再実行しても同じタグが重複しない
+    if 'href="images/favicon.svg"' in html:
+        print(f"ALREADY SET: {filename}")
+        continue
+
+    html, count = re.subn(
+        r"</head\s*>",
+        lambda match: favicon + "\n" + match.group(),
+        html,
+        count=1,
+        flags=re.IGNORECASE
+    )
+
+    if count == 0:
+        print(f"ERROR: head not found in {filename}")
+        continue
+
+    path.write_text(html, encoding="utf-8")
+    print(f"OK: {filename}")
+
+print("Favicon setup finished.")
