@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#050710"
+  >
+
+  <meta
+    name="description"
+    content="AFTERHOURS — Global HIP-HOP and R&B music rankings."
+  >
+
+  <title>AFTERHOURS | Global Music Signal</title>
+
+  <!-- GOOGLE FONTS -->
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- CSS -->
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  >
+
+  <!-- JAVASCRIPT -->
+  <script src="js/data.js" defer></script>
+  <script src="js/app.js" defer></script>
+
+</head>
+
+
+<body data-page="home">
+
+  <!-- TOP INFORMATION BAR -->
+  <div class="topline">
+
+    <div class="shell">
+
+      <span>
+        <span class="pulse"></span>
+        INDEPENDENT GLOBAL MUSIC INDEX
+      </span>
+
+      <span class="topline-right">
+        SYSTEM / 001 — PROTOTYPE
+      </span>
+
+    </div>
+
+  </div>
+
+
+  <!-- HEADER -->
+  <header class="header" id="top">
+
+    <div class="shell header-inner">
+
+      <!-- LOGO -->
+      <a
+        href="index.html"
+        class="brand"
+        aria-label="AFTERHOURS home"
+      >
+        AFTER<span>HOURS</span><i>.</i>
+      </a>
+
+      <!-- MOBILE MENU -->
+      <button
+        class="mobile-menu"
+        type="button"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+      >
+        ☰
+      </button>
+
+      <!-- NAVIGATION -->
+      <nav class="nav" aria-label="Primary navigation">
+
+        <a href="index.html" class="active">
+          HOME
+        </a>
+
+        <a href="hiphop.html">
+          HIP-HOP TOP 50 <span>↗</span>
+        </a>
+
+        <a href="RnB.html">
+          R&B TOP 50 <span>↗</span>
+        </a>
+
+      </nav>
+
+    </div>
+
+  </header>
+
+
+  <main>
+
+    <!-- HERO SECTION -->
+    <section class="home-hero">
+
+      <div
+        class="hero-mesh"
+        aria-hidden="true"
+      ></div>
+
+      <div class="shell hero-layout">
+
+        <!-- HERO TEXT -->
+        <div class="home-hero-copy">
+
+          <div class="eyebrow">
+
+            <span class="line"></span>
+
+            FUTURE-FACING MUSIC CULTURE
+
+          </div>
+
+          <h1>
+            THE <span>NIGHT</span><br>
+            HAS A<br>
+            <em>SIGNAL.</em>
+          </h1>
+
+          <p>
+            Global hip-hop and R&B.
+            Two charts. Fifty positions each.
+            A new kind of club music index,
+            shaped by the listeners.
+          </p>
+
+          <!-- HERO BUTTONS -->
+          <div class="hero-actions">
+
+            <a
+              href="hiphop.html"
+              class="btn btn-primary"
+            >
+              EXPLORE HIP-HOP <b>↗</b>
+            </a>
+
+            <a
+              href="RnB.html"
+              class="btn btn-ghost"
+            >
+              EXPLORE R&B <b>↗</b>
+            </a>
+
+          </div>
+
+        </div>
+
+
+        <!-- TECHNOLOGY VISUAL -->
+        <div
+          class="signal-panel"
+          aria-label="Decorative signal monitor"
+        >
+
+          <div class="signal-panel-top">
+
+            <span>
+              AH // AUDIO FREQUENCY
+            </span>
+
+            <span>
+              ● SYNTHETIC DISPLAY
+            </span>
+
+          </div>
+
+          <!-- SIGNAL BARS -->
+          <div
+            class="signal-bars"
+            aria-hidden="true"
+          >
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+
+          <div class="signal-panel-bottom">
+
+            <span>
+              50 POSITIONS × 02 CHANNELS
+            </span>
+
+            <span>
+              NO LIVE AUDIO DATA
+            </span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- HERO FOOTER -->
+      <div class="shell hero-footer">
+
+        <span>
+          GLOBAL / HIP-HOP / R&B
+        </span>
+
+        <span>
+          SCROLL TO ACCESS ↓
+        </span>
+
+        <span class="month-label">
+          MONTHLY EDITION
+        </span>
+
+      </div>
+
+    </section>
+
+
+    <!-- GENRE SELECTION -->
+    <section
+      class="channels section-pad"
+      id="channels"
+    >
+
+      <div class="shell">
+
+        <div class="section-top">
+
+          <div>
+
+            <span class="mono-label">
+              01 / CHOOSE YOUR CHANNEL
+            </span>
+
+            <h2>
+              THE <span>FREQUENCIES.</span>
+            </h2>
+
+          </div>
+
+          <p>
+            Each sound has its own page,
+            its own TOP 50 board,
+            and room for the community
+            to decide what comes next.
+          </p>
+
+        </div>
+
+
+        <!-- GENRE CARDS -->
+        <div class="channel-grid">
+
+          <!-- HIP-HOP CARD -->
+          <a
+            href="hiphop.html"
+            class="channel-card channel-card-hiphop"
+          >
+
+            <div class="channel-card-top">
+
+              <span>
+                CHANNEL // 001
+              </span>
+
+              <span>
+                ↗
+              </span>
+
+            </div>
+
+            <div class="channel-card-middle">
+
+              <span class="channel-glyph">
+                01
+              </span>
+
+              <h3>
+                HIP<br>
+                HOP<span>.</span>
+              </h3>
+
+            </div>
+
+            <div class="channel-card-bottom">
+
+              <span>
+                GLOBAL HIP-HOP / TOP 50
+              </span>
+
+              <span>
+                ENTER CHART →
+              </span>
+
+            </div>
+
+          </a>
+
+
+          <!-- R&B CARD -->
+          <a
+            href="RnB.html"
+            class="channel-card channel-card-rnb"
+          >
+
+            <div class="channel-card-top">
+
+              <span>
+                CHANNEL // 002
+              </span>
+
+              <span>
+                ↗
+              </span>
+
+            </div>
+
+            <div class="channel-card-middle">
+
+              <span class="channel-glyph">
+                02
+              </span>
+
+              <h3>
+                R<span>&</span>B<span>.</span>
+              </h3>
+
+            </div>
+
+            <div class="channel-card-bottom">
+
+              <span>
+                GLOBAL R&B / TOP 50
+              </span>
+
+              <span>
+                ENTER CHART →
+              </span>
+
+            </div>
+
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- FEATURED TRACKS -->
+    <section
+      class="latest section-pad"
+      id="latest"
+    >
+
+      <div class="shell">
+
+        <div class="section-top">
+
+          <div>
+
+            <span class="mono-label">
+              02 / CURRENT ROTATION
+            </span>
+
+            <h2>
+              IN THE <span>SYSTEM.</span>
+            </h2>
+
+          </div>
+
+          <p>
+            Selected tracks used to preview
+            the experience. These are examples,
+            not measured worldwide rankings.
+          </p>
+
+        </div>
+
+
+        <!-- SONG LIST -->
+        <div
+          class="featured-list"
+          id="home-featured"
+        ></div>
+
+
+        <!-- NOTICE -->
+        <div class="data-notice">
+
+          <span>
+            ⚠ PROTOTYPE DATA
+          </span>
+
+          <p>
+            Track order is illustrative.
+            Votes are saved only in your own browser.
+            No streaming totals or official chart
+            positions are claimed.
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- COMMUNITY SECTION -->
+    <section
+      class="community section-pad"
+      id="community"
+    >
+
+      <div class="shell community-layout">
+
+        <!-- LEFT TEXT -->
+        <div>
+
+          <span class="mono-label">
+            03 / OPEN CHANNEL
+          </span>
+
+          <h2>
+            PUT US<br>
+            <span>ON.</span>
+          </h2>
+
+          <p>
+            Found something the world needs to hear?
+            Send the track into the system.
+            This demo saves suggestions
+            locally on your device.
+          </p>
+
+        </div>
+
+
+        <!-- RECOMMENDATION FORM -->
+        <div class="community-form-wrap">
+
+          <span class="form-top">
+            SEND SIGNAL / MUSIC RECOMMENDATION
+          </span>
+
+          <form id="recommend-form">
+
+            <label for="artist">
+              ARTIST NAME
+            </label>
+
+            <input
+              type="text"
+              id="artist"
+              name="artist"
+              required
+              maxlength="80"
+              placeholder="Artist"
+            >
+
+            <label for="song">
+              TRACK TITLE
+            </label>
+
+            <input
+              type="text"
+              id="song"
+              name="song"
+              required
+              maxlength="100"
+              placeholder="Track"
+            >
+
+            <button
+              type="submit"
+              class="btn btn-primary"
+            >
+              SUBMIT TRACK <b>↗</b>
+            </button>
+
+          </form>
+
+
+          <p
+            class="form-note"
+            id="form-message"
+          >
+            DEMO MODE / NOT PUBLICLY SUBMITTED
+          </p>
+
+
+          <ul
+            class="recommend-list"
+            id="recommend-list"
+          ></ul>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- FOOTER -->
+  <footer class="footer">
+
+    <div class="shell">
+
+      <div class="footer-brand">
+        AFTERHOURS<span>.</span>
+      </div>
+
+      <div class="footer-bottom">
+
+        <span>
+          GLOBAL HIP-HOP / R&B
+        </span>
+
+        <span>
+          INDEPENDENT CONCEPT —
+          NOT AN OFFICIAL MUSIC SERVICE CHART
+        </span>
+
+        <a href="#top">
+          BACK TO TOP ↑
+        </a>
+
+      </div>
+
+    </div>
+
+  </footer>
+
+</body>
+
+</html>

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#050710"
+  >
+
+  <title>R&B TOP 50 | AFTERHOURS</title>
+
+
+  <!-- GOOGLE FONTS -->
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+
+  <!-- CSS -->
+
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  >
+
+
+  <!-- JAVASCRIPT -->
+
+  <script src="js/data.js?v=2" defer></script>
+
+  <script src="js/app.js" defer></script>
+
+</head>
+
+
+<body
+  data-page="chart"
+  data-genre="rnb"
+>
+
+
+  <!-- TOP INFORMATION BAR -->
+
+  <div class="topline">
+
+    <div class="shell">
+
+      <span>
+
+        <span class="pulse"></span>
+
+        INDEPENDENT GLOBAL MUSIC INDEX
+
+      </span>
+
+      <span class="topline-right">
+
+        SYSTEM / 001 — PROTOTYPE
+
+      </span>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- HEADER -->
+
+  <header class="header">
+
+    <div class="shell header-inner">
+
+
+      <!-- LOGO -->
+
+      <a
+        href="index.html"
+        class="brand"
+      >
+
+        AFTER<span>HOURS</span><i>.</i>
+
+      </a>
+
+
+      <!-- MOBILE MENU -->
+
+      <button
+        class="mobile-menu"
+        type="button"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+      >
+
+        ☰
+
+      </button>
+
+
+      <!-- NAVIGATION -->
+
+      <nav
+        class="nav"
+        aria-label="Primary navigation"
+      >
+
+
+        <a href="index.html">
+
+          HOME
+
+        </a>
+
+
+        <a href="hiphop.html">
+
+          HIP-HOP TOP 50 <span>↗</span>
+
+        </a>
+
+
+        <a
+          href="RnB.html"
+          class="active"
+        >
+
+          R&B TOP 50 <span>↗</span>
+
+        </a>
+
+
+      </nav>
+
+
+    </div>
+
+  </header>
+
+
+
+  <main>
+
+
+    <!-- R&B HERO SECTION -->
+
+    <section class="chart-hero rnb-hero">
+
+      <div
+        class="hero-mesh"
+        aria-hidden="true"
+      ></div>
+
+
+      <div class="shell chart-hero-layout">
+
+
+        <!-- LEFT SIDE -->
+
+        <div>
+
+
+          <span class="eyebrow">
+
+            <span class="line"></span>
+
+            CHANNEL 002 / GLOBAL
+
+          </span>
+
+
+
+          <h1>
+
+            R<span>&</span><br>B.
+
+          </h1>
+
+
+
+          <p>
+
+            THE MONTHLY TOP <b>50</b> SYSTEM.
+
+          </p>
+
+
+        </div>
+
+
+
+        <!-- RIGHT SIDE -->
+
+        <div class="chart-hero-side">
+
+
+          <span class="chart-hero-number">
+
+            50
+
+          </span>
+
+
+
+          <span class="mono-label">
+
+            POSITIONS / WORLDWIDE /
+
+            <span class="month-label">
+
+              CURRENT EDITION
+
+            </span>
+
+          </span>
+
+
+
+          <p>
+
+            Prototype layout.
+
+            Real track rankings will require
+            a clearly defined and permitted
+            data source.
+
+          </p>
+
+
+        </div>
+
+
+      </div>
+
+    </section>
+
+
+
+    <!-- R&B RANKING SECTION -->
+
+    <section class="chart-content section-pad">
+
+      <div class="shell">
+
+
+        <!-- TOP 3 SECTION -->
+
+        <div class="chart-intro">
+
+
+          <div>
+
+
+            <span class="mono-label">
+
+              01 / HEADLINERS
+
+            </span>
+
+
+
+            <h2>
+
+              TOP <span>THREE.</span>
+
+            </h2>
+
+
+          </div>
+
+
+
+          <span class="data-chip">
+
+            DEMO ORDER • NOT OFFICIAL
+
+          </span>
+
+
+        </div>
+
+
+
+        <!-- TOP 3 SONGS -->
+
+        <div
+          id="podium"
+          class="podium"
+        ></div>
+
+
+
+        <!-- TOP 50 SECTION -->
+
+        <div class="chart-intro chart-intro-list">
+
+
+          <div>
+
+
+            <span class="mono-label">
+
+              02 / COMPLETE BOARD
+
+            </span>
+
+
+
+            <h2>
+
+              THE <span>RANKING.</span>
+
+            </h2>
+
+
+          </div>
+
+
+
+          <span class="data-chip">
+
+            50 SLOTS / SAMPLE TRACKS + EMPTY SLOTS
+
+          </span>
+
+
+        </div>
+
+
+
+        <!-- SEARCH BAR -->
+
+        <div class="chart-tools">
+
+
+          <label class="search-box">
+
+
+            <span>⌕</span>
+
+
+
+            <input
+              id="chart-search"
+              type="search"
+              placeholder="SEARCH TRACK / ARTIST"
+              aria-label="Search the chart"
+            >
+
+
+          </label>
+
+
+
+          <span id="chart-results">
+
+            50 SLOTS
+
+          </span>
+
+
+        </div>
+
+
+
+        <!-- RANKING TABLE HEADER -->
+
+        <div class="table-head">
+
+
+          <span>
+
+            POS.
+
+          </span>
+
+
+
+          <span>
+
+            TRACK / ARTIST
+
+          </span>
+
+
+
+          <span>
+
+            VOTE
+
+          </span>
+
+
+
+          <span>
+
+            LISTEN
+
+          </span>
+
+
+        </div>
+
+
+
+        <!-- RANKING LIST -->
+
+        <ol
+          id="chart-list"
+          class="chart-list"
+          start="4"
+        ></ol>
+
+
+
+        <!-- EMPTY SEARCH RESULT -->
+
+        <p
+          id="chart-empty"
+          class="chart-empty"
+          hidden
+        >
+
+          No matching demo tracks found.
+
+        </p>
+
+
+
+        <!-- DATA INFORMATION -->
+
+        <div class="data-notice">
+
+
+          <span>
+
+            ⚠ DATA STATUS
+
+          </span>
+
+
+
+          <p>
+
+            This is not a measured monthly chart.
+
+            The visible songs are editorial demo data;
+            unfilled positions are clearly marked.
+
+            Your votes are stored locally,
+            not counted globally.
+
+          </p>
+
+
+        </div>
+
+
+      </div>
+
+    </section>
+
+
+  </main>
+
+
+
+  <!-- FOOTER -->
+
+  <footer class="footer">
+
+    <div class="shell">
+
+
+      <div class="footer-brand">
+
+        AFTERHOURS<span>.</span>
+
+      </div>
+
+
+
+      <div class="footer-bottom">
+
+
+        <span>
+
+          GLOBAL HIP-HOP / R&B
+
+        </span>
+
+
+
+        <span>
+
+          INDEPENDENT CONCEPT —
+          NOT AN OFFICIAL MUSIC SERVICE CHART
+
+        </span>
+
+
+
+        <a href="index.html">
+
+          BACK TO HOME ↑
+
+        </a>
+
+
+      </div>
+
+
+    </div>
+
+  </footer>
+
+
+</body>
+
+</html>
