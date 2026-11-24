@@ -1,12 +1,10 @@
 
 "use strict";
 
-/* ======================================
-   AFTERHOURS
-   STEP 10 - MONTHLY CHART SYSTEM
-====================================== */
-
-// 01. 基本設定
+/* ==========================================
+   AFTERHOURS - STEP 17
+   FAST ALBUM ARTWORK SYSTEM
+========================================== */
 
 const DATA = window.AFTERHOURS_DATA || {
   hiphop: [],
@@ -20,7 +18,9 @@ const HISTORY_PREFIX = "afterhours-history-v1-";
 const COVER_PREFIX = "afterhours-cover-v2-";
 const REC_KEY = "afterhours-v2-demo-recs";
 
-// 日本時間で年月を取得
+/* ==========================================
+   DATE
+========================================== */
 
 const dateParts = new Intl.DateTimeFormat(
   "en-US",
@@ -31,19 +31,17 @@ const dateParts = new Intl.DateTimeFormat(
   }
 ).formatToParts(new Date());
 
-const year = dateParts.find(
-  p => p.type === "year"
-).value;
-
-const month = dateParts.find(
-  p => p.type === "month"
-).value;
-
-const CURRENT_MONTH = `${year}-${month}`;
+const CURRENT_MONTH = `${
+  dateParts.find(p => p.type === "year").value
+}-${
+  dateParts.find(p => p.type === "month").value
+}`;
 
 let selectedMonth = CURRENT_MONTH;
 
-// 02. 保存処理
+/* ==========================================
+   STORAGE
+========================================== */
 
 function readLocal(key, fallback) {
   try {
@@ -67,29 +65,54 @@ function saveLocal(key, value) {
   }
 }
 
-// 03. 共通HTML要素
+/* ==========================================
+   COMMON FUNCTIONS
+========================================== */
 
-function el(tag, className = "", text) {
+function el(tag, className = "", value) {
   const node = document.createElement(tag);
 
   if (className) {
     node.className = className;
   }
 
-  if (text !== undefined) {
-    node.textContent = text;
+  if (value !== undefined) {
+    node.textContent = value;
   }
 
   return node;
 }
 
-// 04. 年月の表示
+function normalize(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function safeUrl(value) {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "https:"
+      ? url.href
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/* ==========================================
+   MONTHLY RANKING SYSTEM
+========================================== */
 
 function monthLabel(value) {
-  const [y, m] = value.split("-").map(Number);
+  const [year, month] = value
+    .split("-")
+    .map(Number);
 
   const date = new Date(
-    Date.UTC(y, m - 1, 1)
+    Date.UTC(year, month - 1, 1)
   );
 
   return new Intl.DateTimeFormat(
@@ -103,14 +126,14 @@ function monthLabel(value) {
 }
 
 function previousMonth(value) {
-  const [y, m] = value.split("-").map(Number);
+  const [year, month] = value
+    .split("-")
+    .map(Number);
 
   return new Date(
-    Date.UTC(y, m - 2, 1)
+    Date.UTC(year, month - 2, 1)
   ).toISOString().slice(0, 7);
 }
-
-// 05. ランキングデータ
 
 function getTracks(type) {
   return Array.isArray(DATA[type])
@@ -121,43 +144,6 @@ function getTracks(type) {
 function historyKey(month, type) {
   return `${HISTORY_PREFIX}${month}-${type}`;
 }
-
-// 06. 毎月のランキングを保存
-
-function saveCurrentHistory() {
-  for (const type of ["hiphop", "rnb"]) {
-
-    const key = historyKey(
-      CURRENT_MONTH,
-      type
-    );
-
-    // 保存済みなら変更しない
-    if (readLocal(key, null)) {
-      continue;
-    }
-
-    const tracks = getTracks(type);
-
-    const snapshot = {
-      month: CURRENT_MONTH,
-      genre: type,
-      dataType: "DEMO",
-      createdAt: new Date().toISOString(),
-
-      tracks: tracks.map((track, index) => ({
-        id: track.id,
-        title: track.title,
-        artist: track.artist,
-        rank: index + 1
-      }))
-    };
-
-    saveLocal(key, snapshot);
-  }
-}
-
-// 07. 過去のランキングを取得
 
 function getHistory(month, type) {
   const record = readLocal(
@@ -176,29 +162,57 @@ function getHistory(month, type) {
   return record.tracks;
 }
 
-// 08. 選択された月のランキング
+function saveCurrentHistory() {
+  for (const type of ["hiphop", "rnb"]) {
+    if (getHistory(CURRENT_MONTH, type)) {
+      continue;
+    }
+
+    const tracks = getTracks(type);
+
+    if (tracks.length === 0) {
+      continue;
+    }
+
+    saveLocal(
+      historyKey(CURRENT_MONTH, type),
+      {
+        month: CURRENT_MONTH,
+        genre: type,
+        dataType: "DEMO",
+        createdAt: new Date().toISOString(),
+
+        tracks: tracks.map((track, index) => ({
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          rank: index + 1
+        }))
+      }
+    );
+  }
+}
 
 function selectedTracks() {
-
   if (selectedMonth === CURRENT_MONTH) {
     return getTracks(genre);
   }
 
-  const history = getHistory(
+  const saved = getHistory(
     selectedMonth,
     genre
   );
 
-  if (!history) {
-    return [];
-  }
-
-  return [...history]
-    .sort((a, b) => a.rank - b.rank)
-    .slice(0, 50);
+  return saved
+    ? [...saved]
+        .sort((a, b) => a.rank - b.rank)
+        .slice(0, 50)
+    : [];
 }
 
-// 09. 前月との比較
+/* ==========================================
+   RANK MOVEMENT
+========================================== */
 
 function getMovement(track, rank) {
   const previous = getHistory(
@@ -206,7 +220,7 @@ function getMovement(track, rank) {
     genre
   );
 
-  if (!previous) {
+  if (!previous || previous.length === 0) {
     return {
       label: "—",
       color: "#8c97b0"
@@ -224,18 +238,25 @@ function getMovement(track, rank) {
     };
   }
 
-  const diff = old.rank - rank;
-
-  if (diff > 0) {
+  if (!Number.isInteger(old.rank)) {
     return {
-      label: `↑ UP ${diff}`,
+      label: "—",
+      color: "#8c97b0"
+    };
+  }
+
+  const difference = old.rank - rank;
+
+  if (difference > 0) {
+    return {
+      label: `↑ UP ${difference}`,
       color: "#58e9a1"
     };
   }
 
-  if (diff < 0) {
+  if (difference < 0) {
     return {
-      label: `↓ DOWN ${Math.abs(diff)}`,
+      label: `↓ DOWN ${Math.abs(difference)}`,
       color: "#ff7895"
     };
   }
@@ -247,12 +268,12 @@ function getMovement(track, rank) {
 }
 
 function movementElement(track, rank) {
-  const result = getMovement(track, rank);
+  const movement = getMovement(track, rank);
 
   const node = el(
     "span",
     "rank-movement",
-    result.label
+    movement.label
   );
 
   node.style.cssText = `
@@ -262,57 +283,58 @@ function movementElement(track, rank) {
     letter-spacing: 0.04em;
   `;
 
-  node.style.color = result.color;
+  node.style.color = movement.color;
 
   return node;
 }
 
-/* ======================================
-   10. MONTH SELECTOR
-====================================== */
+/* ==========================================
+   MONTH SELECTOR
+========================================== */
 
 function availableMonths(type) {
-
-  const months = new Set([
-    CURRENT_MONTH
-  ]);
+  const months = new Set([CURRENT_MONTH]);
 
   try {
     for (let i = 0; i < localStorage.length; i++) {
-
       const key = localStorage.key(i);
 
-      const pattern = new RegExp(
-        `^afterhours-history-v1-(\\d{4}-\\d{2})-${type}$`
-      );
+      const match = key &&
+        /^afterhours-history-v1-(\d{4}-\d{2})-(hiphop|rnb)$/
+          .exec(key);
 
-      const match = key.match(pattern);
-
-      if (match) {
-        const savedMonth = match[1];
-
-        if (
-          savedMonth <= CURRENT_MONTH &&
-          getHistory(savedMonth, type)
-        ) {
-          months.add(savedMonth);
-        }
+      if (
+        match &&
+        match[2] === type &&
+        match[1] <= CURRENT_MONTH &&
+        getHistory(match[1], type)
+      ) {
+        months.add(match[1]);
       }
     }
   } catch {
-    // 保存機能が使えない場合は現在月のみ
+    // Local storage unavailable.
   }
 
   return [...months].sort().reverse();
 }
 
-function initMonthSelector() {
+function updateMonthDisplay() {
+  document
+    .querySelectorAll(".month-label")
+    .forEach(node => {
+      node.textContent = monthLabel(
+        selectedMonth
+      );
+    });
+}
 
+function initMonthSelector() {
   const tools = document.querySelector(
     ".chart-tools"
   );
 
-  if (!tools) {
+  if (!tools || tools.querySelector("#month-select")) {
     return;
   }
 
@@ -349,117 +371,154 @@ function initMonthSelector() {
     border: 1px solid #35445b;
     padding: 12px;
     min-width: 190px;
+    max-width: 100%;
     font-size: 12px;
     cursor: pointer;
   `;
 
   availableMonths(genre).forEach(value => {
-
     const option = el(
       "option",
       "",
-      monthLabel(value)
+      monthLabel(value) +
+        (value === CURRENT_MONTH
+          ? " / CURRENT"
+          : "")
     );
 
     option.value = value;
-
-    if (value === CURRENT_MONTH) {
-      option.textContent += " / CURRENT";
-    }
-
     select.append(option);
   });
 
   select.value = CURRENT_MONTH;
 
   select.addEventListener("change", () => {
-
     selectedMonth = select.value;
-
     updateMonthDisplay();
-
     renderChart();
   });
 
   wrapper.append(select);
-
   tools.prepend(wrapper);
-
-  updateMonthDisplay();
 }
 
-// 11. 表示中の年月を更新
+/* ==========================================
+   FAST ARTWORK SYSTEM
+========================================== */
 
-function updateMonthDisplay() {
+// First load saved artwork URLs.
+// This avoids searching Apple for every song
+// each time the page opens.
 
-  document
-    .querySelectorAll(".month-label")
-    .forEach(node => {
-      node.textContent = monthLabel(
-        selectedMonth
-      );
-    });
-}
+const ARTWORK_MANIFEST = fetch(
+  "images/artwork-map.json",
+  { cache: "no-cache" }
+)
+  .then(response => {
+    return response.ok
+      ? response.json()
+      : {};
+  })
+  .then(value => {
+    return value && typeof value === "object"
+      ? value
+      : {};
+  })
+  .catch(() => ({}));
 
-/* ======================================
-   12. ARTWORK SYSTEM
-====================================== */
-
-function normalize(value) {
-  return String(value || "")
-    .normalize("NFKD")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
-
-function safeUrl(value) {
-  try {
-    const url = new URL(value);
-
-    return url.protocol === "https:"
-      ? url.href
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-const coverPromises = new Map();
+const artworkPromises = new Map();
+const artworkNodes = new WeakMap();
 
 let requestQueue = Promise.resolve();
-let lastRequest = 0;
+let lastRequestAt = 0;
 
-function lookupArtwork(track) {
+/* ==========================================
+   VALIDATE ARTWORK
+========================================== */
 
-  const cacheKey = COVER_PREFIX + track.id;
-
-  if (coverPromises.has(cacheKey)) {
-    return coverPromises.get(cacheKey);
+function validArtwork(entry, track) {
+  if (!entry || typeof entry !== "object") {
+    return null;
   }
 
-  const cached = readLocal(cacheKey, null);
+  if (
+    entry.title &&
+    normalize(entry.title) !== normalize(track.title)
+  ) {
+    return null;
+  }
+
+  if (
+    entry.artist &&
+    normalize(entry.artist) !== normalize(track.artist)
+  ) {
+    return null;
+  }
+
+  const image = safeUrl(entry.image);
+
+  return image
+    ? {
+        image,
+        link: safeUrl(entry.link)
+      }
+    : null;
+}
+
+function improveArtworkSize(url) {
+  if (!url) {
+    return null;
+  }
+
+  return safeUrl(
+    url.replace(
+      /\b\d+x\d+bb(?=\.)/,
+      "300x300bb"
+    )
+  );
+}
+
+/* ==========================================
+   FALLBACK ARTWORK SEARCH
+========================================== */
+
+function lookupLiveArtwork(track) {
+  const key = [
+    normalize(track.id),
+    normalize(track.title),
+    normalize(track.artist)
+  ].join("-");
+
+  if (artworkPromises.has(key)) {
+    return artworkPromises.get(key);
+  }
+
+  const cached = readLocal(
+    COVER_PREFIX + track.id,
+    null
+  );
 
   if (
     cached &&
     typeof cached.savedAt === "number" &&
-    Date.now() - cached.savedAt <
-      7 * 24 * 60 * 60 * 1000
+    Date.now() - cached.savedAt < 7 * 86400000
   ) {
-
-    const promise = Promise.resolve(
-      cached.result
+    const valid = validArtwork(
+      cached.result,
+      track
     );
 
-    coverPromises.set(cacheKey, promise);
-
-    return promise;
+    if (valid) {
+      const result = Promise.resolve(valid);
+      artworkPromises.set(key, result);
+      return result;
+    }
   }
 
   const task = requestQueue.then(async () => {
-
     const pause = Math.max(
       0,
-      3200 - (Date.now() - lastRequest)
+      3200 - (Date.now() - lastRequestAt)
     );
 
     if (pause > 0) {
@@ -468,18 +527,17 @@ function lookupArtwork(track) {
       });
     }
 
-    lastRequest = Date.now();
+    lastRequestAt = Date.now();
 
     const params = new URLSearchParams({
       term: `${track.title} ${track.artist}`,
       country: "US",
       media: "music",
       entity: "song",
-      limit: "15"
+      limit: "20"
     });
 
     try {
-
       const response = await fetch(
         `https://itunes.apple.com/search?${params}`
       );
@@ -490,9 +548,11 @@ function lookupArtwork(track) {
 
       const data = await response.json();
 
-      const target = normalize(track.title);
+      const targetTitle = normalize(
+        track.title
+      );
 
-      const artistName = normalize(
+      const mainArtist = normalize(
         track.artist.split(
           /,|&|\bfeat\.?\b|\bft\.?\b/i
         )[0]
@@ -500,19 +560,20 @@ function lookupArtwork(track) {
 
       const match = (data.results || []).find(
         item => {
-
-          const title = normalize(
+          const foundTitle = normalize(
             item.trackName
           );
 
-          const artist = normalize(
+          const foundArtist = normalize(
             item.artistName
           );
 
           return (
-            (title === target ||
-              title.startsWith(target)) &&
-            artist.includes(artistName) &&
+            (
+              foundTitle === targetTitle ||
+              foundTitle.startsWith(targetTitle)
+            ) &&
+            foundArtist.includes(mainArtist) &&
             safeUrl(item.artworkUrl100)
           );
         }
@@ -523,22 +584,29 @@ function lookupArtwork(track) {
       }
 
       const result = {
-        image: safeUrl(
-          match.artworkUrl100.replace(
-            "100x100bb",
-            "600x600bb"
-          )
+        image: improveArtworkSize(
+          match.artworkUrl100
         ),
         link: safeUrl(match.trackViewUrl)
       };
 
-      saveLocal(cacheKey, {
-        savedAt: Date.now(),
-        result
-      });
+      if (!result.image) {
+        return null;
+      }
+
+      saveLocal(
+        COVER_PREFIX + track.id,
+        {
+          savedAt: Date.now(),
+          result: {
+            ...result,
+            title: track.title,
+            artist: track.artist
+          }
+        }
+      );
 
       return result;
-
     } catch {
       return null;
     }
@@ -549,51 +617,48 @@ function lookupArtwork(track) {
     () => undefined
   );
 
-  coverPromises.set(cacheKey, task);
+  artworkPromises.set(key, task);
 
   return task;
 }
 
-// 13. ジャケット表示
+async function resolveArtwork(track) {
+  const manifest = await ARTWORK_MANIFEST;
 
-const coverTracks = new WeakMap();
+  const saved = validArtwork(
+    manifest[track.id],
+    track
+  );
 
-const observer =
-  "IntersectionObserver" in window
-    ? new IntersectionObserver(entries => {
+  if (saved) {
+    return saved;
+  }
 
-        for (const entry of entries) {
+  return lookupLiveArtwork(track);
+}
 
-          if (!entry.isIntersecting) {
-            continue;
-          }
+/* ==========================================
+   DISPLAY ARTWORK
+========================================== */
 
-          observer.unobserve(entry.target);
-
-          displayArtwork(
-            entry.target,
-            coverTracks.get(entry.target)
-          );
-        }
-
-      }, {
-        rootMargin: "250px"
-      })
-    : null;
-
-async function displayArtwork(cover, track) {
-
-  if (!track) {
+async function displayArtwork(
+  cover,
+  track,
+  highPriority = false
+) {
+  if (
+    !cover ||
+    !track ||
+    cover.dataset.coverRequested === "yes"
+  ) {
     return;
   }
 
-  const artwork = await lookupArtwork(track);
+  cover.dataset.coverRequested = "yes";
 
-  if (
-    !artwork ||
-    !artwork.image ||
-    !cover.isConnected
-  ) {
+  const artwork = await resolveArtwork(track);
+
+  if (!artwork || !cover.isConnected) {
     return;
   }
 
@@ -601,6 +666,11 @@ async function displayArtwork(cover, track) {
 
   img.alt = `${track.title} album artwork`;
   img.decoding = "async";
+  img.loading = "eager";
+
+  if (highPriority) {
+    img.fetchPriority = "high";
+  }
 
   img.style.cssText = `
     display: block;
@@ -610,7 +680,6 @@ async function displayArtwork(cover, track) {
   `;
 
   img.onload = () => {
-
     if (!cover.isConnected) {
       return;
     }
@@ -627,9 +696,11 @@ async function displayArtwork(cover, track) {
     link.target = "_blank";
     link.rel = "noopener noreferrer";
 
+    link.title = `Open ${track.title} in Apple Music`;
+
     link.setAttribute(
       "aria-label",
-      `Open ${track.title} in Apple Music`
+      link.title
     );
 
     link.style.cssText = `
@@ -640,44 +711,98 @@ async function displayArtwork(cover, track) {
     `;
 
     link.append(img);
+
     cover.replaceChildren(link);
+  };
+
+  img.onerror = () => {
+    // Keep the initial-letter placeholder.
   };
 
   img.src = artwork.image;
 }
 
-function makeCover(track, index) {
+/* ==========================================
+   LAZY LOADING
+========================================== */
 
+const coverObserver =
+  "IntersectionObserver" in window
+    ? new IntersectionObserver(
+        entries => {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) {
+              return;
+            }
+
+            coverObserver.unobserve(
+              entry.target
+            );
+
+            const value = artworkNodes.get(
+              entry.target
+            );
+
+            if (value) {
+              displayArtwork(
+                entry.target,
+                value.track,
+                value.highPriority
+              );
+            }
+          });
+        },
+        {
+          rootMargin: "350px"
+        }
+      )
+    : null;
+
+function makeCover(track, index) {
   const cover = el(
     "div",
     "cover-art",
-    track.title.charAt(0).toUpperCase()
+    String(track.title || "?")
+      .charAt(0)
+      .toUpperCase()
   );
 
   cover.dataset.tone = String(index % 5);
 
-  coverTracks.set(cover, track);
+  cover.style.position = "relative";
+  cover.style.overflow = "hidden";
 
-  if (observer) {
-    observer.observe(cover);
+  artworkNodes.set(
+    cover,
+    {
+      track,
+      highPriority: index < 3
+    }
+  );
+
+  if (coverObserver) {
+    coverObserver.observe(cover);
   } else {
-    displayArtwork(cover, track);
+    displayArtwork(
+      cover,
+      track,
+      index < 3
+    );
   }
 
   return cover;
 }
 
-/* ======================================
-   14. MUSIC LINKS
-====================================== */
+/* ==========================================
+   MUSIC LINKS
+========================================== */
 
 function musicLink(track, service) {
-
   const term = encodeURIComponent(
     `${track.title} ${track.artist}`
   );
 
-  const href = service === "Spotify"
+  const url = service === "Spotify"
     ? `https://open.spotify.com/search/${term}`
     : `https://music.apple.com/us/search?term=${term}`;
 
@@ -687,7 +812,7 @@ function musicLink(track, service) {
     service === "Spotify" ? "SP" : "AM"
   );
 
-  link.href = href;
+  link.href = url;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
 
@@ -700,7 +825,6 @@ function musicLink(track, service) {
 }
 
 function makeLinks(track) {
-
   const box = el("div", "track-links");
 
   box.append(
@@ -711,16 +835,11 @@ function makeLinks(track) {
   return box;
 }
 
-/* ======================================
-   15. VOTE SYSTEM
-====================================== */
-
-function voteKeyFor(month) {
-  return `afterhours-v2-demo-votes-${month}`;
-}
+/* ==========================================
+   VOTING SYSTEM
+========================================== */
 
 function makeVoteButton(track) {
-
   const button = el(
     "button",
     "vote-btn"
@@ -728,12 +847,15 @@ function makeVoteButton(track) {
 
   button.type = "button";
 
-  const archived =
-    selectedMonth !== CURRENT_MONTH;
+  if (selectedMonth !== CURRENT_MONTH) {
+    button.textContent = "ARCHIVE";
+    button.disabled = true;
+    button.title = "Past charts are read-only";
+    return button;
+  }
 
-  const voteKey = voteKeyFor(
-    CURRENT_MONTH
-  );
+  const voteKey =
+    `afterhours-v2-demo-votes-${CURRENT_MONTH}`;
 
   const stored = readLocal(voteKey, []);
 
@@ -741,15 +863,7 @@ function makeVoteButton(track) {
     Array.isArray(stored) ? stored : []
   );
 
-  if (archived) {
-    button.textContent = "ARCHIVE";
-    button.disabled = true;
-    button.title = "Past charts are read-only";
-    return button;
-  }
-
   function update() {
-
     const voted = votes.has(track.id);
 
     button.textContent = voted
@@ -765,7 +879,6 @@ function makeVoteButton(track) {
   update();
 
   button.addEventListener("click", () => {
-
     if (votes.has(track.id)) {
       votes.delete(track.id);
     } else {
@@ -773,19 +886,17 @@ function makeVoteButton(track) {
     }
 
     saveLocal(voteKey, [...votes]);
-
     update();
   });
 
   return button;
 }
 
-/* ======================================
-   16. TOP THREE
-====================================== */
+/* ==========================================
+   TOP 3
+========================================== */
 
 function makePodiumCard(track, index) {
-
   const card = el(
     "article",
     "podium-card"
@@ -815,51 +926,32 @@ function makePodiumCard(track, index) {
   return card;
 }
 
-/* ======================================
-   17. RANKING ROWS
-====================================== */
+/* ==========================================
+   CHART ROW
+========================================== */
 
 function makeRow(track, index) {
-
   const row = el(
     "li",
-    track ? "chart-row" : "chart-row is-pending"
+    track
+      ? "chart-row"
+      : "chart-row is-pending"
   );
-
-  const rank = index + 1;
 
   row.append(
     el(
       "span",
       "rank-no",
-      String(rank).padStart(2, "0")
+      String(index + 1).padStart(2, "0")
     )
   );
 
-  const main = el("div", "row-track");
+  const main = el(
+    "div",
+    "row-track"
+  );
 
-  if (track) {
-
-    main.append(makeCover(track, index));
-
-    const info = el("div");
-
-    info.append(
-      el("h3", "", track.title),
-      el("p", "", track.artist),
-      movementElement(track, rank)
-    );
-
-    main.append(info);
-
-    row.append(
-      main,
-      makeVoteButton(track),
-      makeLinks(track)
-    );
-
-  } else {
-
+  if (!track) {
     main.append(
       el(
         "span",
@@ -873,27 +965,38 @@ function makeRow(track, index) {
       el("span", "slot-label", "—"),
       el("span", "slot-label", "—")
     );
+
+    return row;
   }
+
+  main.append(
+    makeCover(track, index)
+  );
+
+  const info = el("div");
+
+  info.append(
+    el("h3", "", track.title),
+    el("p", "", track.artist),
+    movementElement(track, index + 1)
+  );
+
+  main.append(info);
+
+  row.append(
+    main,
+    makeVoteButton(track),
+    makeLinks(track)
+  );
 
   return row;
 }
 
-/* ======================================
-   18. RENDER RANKING
-====================================== */
+/* ==========================================
+   RENDER CHART
+========================================== */
 
 function renderChart() {
-
-  const tracks = selectedTracks();
-
-  const search = document.querySelector(
-    "#chart-search"
-  );
-
-  const query = search
-    ? search.value.trim().toLowerCase()
-    : "";
-
   const podium = document.querySelector(
     "#podium"
   );
@@ -906,40 +1009,44 @@ function renderChart() {
     return;
   }
 
+  const tracks = selectedTracks();
+
+  const search = document.querySelector(
+    "#chart-search"
+  );
+
+  const query = search
+    ? search.value.trim().toLowerCase()
+    : "";
+
   podium.replaceChildren();
   board.replaceChildren();
 
-  let shown = 0;
-
-  // 過去データの有無
   const hasArchive =
     selectedMonth === CURRENT_MONTH ||
     getHistory(selectedMonth, genre) !== null;
 
   if (!hasArchive) {
-
-    const message = el(
-      "p",
-      "chart-empty",
-      "NO SAVED CHART FOR THIS MONTH"
+    board.append(
+      el(
+        "li",
+        "chart-row",
+        "NO SAVED CHART FOR THIS MONTH"
+      )
     );
-
-    board.append(message);
 
     return;
   }
 
-  // TOP 3
+  let shown = 0;
 
   tracks.slice(0, 3).forEach(
     (track, index) => {
-
       const target =
         `${track.title} ${track.artist}`
           .toLowerCase();
 
       if (!query || target.includes(query)) {
-
         podium.append(
           makePodiumCard(track, index)
         );
@@ -949,14 +1056,10 @@ function renderChart() {
     }
   );
 
-  // 4〜50位
-
   for (let i = 3; i < 50; i++) {
-
     const track = tracks[i];
 
     if (query) {
-
       if (!track) {
         continue;
       }
@@ -998,12 +1101,11 @@ function renderChart() {
   }
 }
 
-/* ======================================
-   19. HOME FEATURED TRACKS
-====================================== */
+/* ==========================================
+   HOME PAGE
+========================================== */
 
 function renderHome() {
-
   const list = document.querySelector(
     "#home-featured"
   );
@@ -1015,75 +1117,75 @@ function renderHome() {
   list.replaceChildren();
 
   const featured = [
-
-    ...getTracks("hiphop").slice(0, 3).map(
-      (track, index) => ({
+    ...getTracks("hiphop")
+      .slice(0, 3)
+      .map((track, index) => ({
         track,
         index,
         type: "HIP-HOP"
-      })
-    ),
+      })),
 
-    ...getTracks("rnb").slice(0, 3).map(
-      (track, index) => ({
+    ...getTracks("rnb")
+      .slice(0, 3)
+      .map((track, index) => ({
         track,
         index,
         type: "R&B"
-      })
-    )
+      }))
   ];
 
-  featured.forEach(({ track, index, type }) => {
+  featured.forEach(
+    ({ track, index, type }) => {
+      const card = el(
+        "article",
+        "featured-card"
+      );
 
-    const card = el(
-      "article",
-      "featured-card"
-    );
+      const top = el(
+        "div",
+        "featured-card-top"
+      );
 
-    const top = el(
-      "div",
-      "featured-card-top"
-    );
+      top.append(
+        el("span", "", type),
+        el(
+          "span",
+          "",
+          `DEMO / ${String(index + 1).padStart(2, "0")}`
+        )
+      );
 
-    top.append(
-      el("span", "", type),
-      el(
-        "span",
+      card.append(
+        top,
+        makeCover(track, index),
+        el("h3", "", track.title),
+        el("p", "", track.artist)
+      );
+
+      const link = el(
+        "a",
         "",
-        `DEMO / ${String(index + 1).padStart(2, "0")}`
-      )
-    );
+        `EXPLORE ${type} CHART ↗`
+      );
 
-    card.append(
-      top,
-      makeCover(track, index),
-      el("h3", "", track.title),
-      el("p", "", track.artist)
-    );
+      link.href = type === "HIP-HOP"
+        ? "hiphop.html"
+        : "RnB.html";
 
-    const link = el(
-      "a",
-      "",
-      `EXPLORE ${type} CHART ↗`
-    );
+      card.append(link);
 
-    link.href = type === "HIP-HOP"
-      ? "hiphop.html"
-      : "RnB.html";
-
-    card.append(link);
-    list.append(card);
-  });
+      list.append(card);
+    }
+  );
 
   initRecommendations();
 }
 
-/* ======================================
-   20. RECOMMENDATIONS
-====================================== */
+/* ==========================================
+   RECOMMENDATIONS
+========================================== */
 
 function initRecommendations() {
-
   const form = document.querySelector(
     "#recommend-form"
   );
@@ -1096,41 +1198,39 @@ function initRecommendations() {
     return;
   }
 
-  const stored = readLocal(REC_KEY, []);
+  const stored = readLocal(
+    REC_KEY,
+    []
+  );
 
   let recommendations = Array.isArray(stored)
     ? stored
     : [];
 
   function render() {
-
     list.replaceChildren();
 
-    recommendations.slice(0, 5).forEach(
-      item => {
-
+    recommendations
+      .slice(0, 5)
+      .forEach(item => {
         if (
-          typeof item.song !== "string" ||
-          typeof item.artist !== "string"
+          typeof item.song === "string" &&
+          typeof item.artist === "string"
         ) {
-          return;
+          list.append(
+            el(
+              "li",
+              "",
+              `${item.song.slice(0, 100)} — ${item.artist.slice(0, 80)}`
+            )
+          );
         }
-
-        list.append(
-          el(
-            "li",
-            "",
-            `${item.song.slice(0, 100)} — ${item.artist.slice(0, 80)}`
-          )
-        );
-      }
-    );
+      });
   }
 
   form.addEventListener(
     "submit",
     event => {
-
       event.preventDefault();
 
       const artist = form.elements.artist
@@ -1174,12 +1274,11 @@ function initRecommendations() {
   render();
 }
 
-/* ======================================
-   21. NAVIGATION
-====================================== */
+/* ==========================================
+   NAVIGATION
+========================================== */
 
 function initMenu() {
-
   const button = document.querySelector(
     ".mobile-menu"
   );
@@ -1195,30 +1294,35 @@ function initMenu() {
     });
 
   if (button && nav) {
+    button.addEventListener(
+      "click",
+      () => {
+        const opened = nav.classList.toggle(
+          "is-open"
+        );
 
-    button.addEventListener("click", () => {
-
-      const opened =
-        nav.classList.toggle("is-open");
-
-      button.setAttribute(
-        "aria-expanded",
-        String(opened)
-      );
-    });
+        button.setAttribute(
+          "aria-expanded",
+          String(opened)
+        );
+      }
+    );
 
     nav.querySelectorAll("a").forEach(
       link => {
+        link.addEventListener(
+          "click",
+          () => {
+            nav.classList.remove(
+              "is-open"
+            );
 
-        link.addEventListener("click", () => {
-
-          nav.classList.remove("is-open");
-
-          button.setAttribute(
-            "aria-expanded",
-            "false"
-          );
-        });
+            button.setAttribute(
+              "aria-expanded",
+              "false"
+            );
+          }
+        );
       }
     );
   }
@@ -1226,24 +1330,19 @@ function initMenu() {
   updateMonthDisplay();
 }
 
-/* ======================================
-   22. START
-====================================== */
+/* ==========================================
+   START AFTERHOURS
+========================================== */
 
-// 現在月のデモ順位を記録
 saveCurrentHistory();
 
-// 共通ナビゲーション
 initMenu();
 
-// HOME
 if (page === "home") {
   renderHome();
 }
 
-// HIP-HOP / R&B
 if (page === "chart") {
-
   initMonthSelector();
 
   const search = document.querySelector(

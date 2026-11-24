@@ -1,0 +1,536 @@
+{
+  "hh01": {
+    "artist": "Kendrick Lamar",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/31/3a/3f/313a3fbc-bb8f-80c7-b5a2-e226869a38cd/24UMGIM51924.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/not-like-us/1781353928?i=1781353929&uo=4",
+    "title": "Not Like Us"
+  },
+  "hh02": {
+    "artist": "Drake",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/65/a1/d8/65a1d809-dede-adf4-d85e-964070e77f58/808391285897.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/nokia/6814097810?i=6814098030&uo=4",
+    "title": "NOKIA"
+  },
+  "hh03": {
+    "artist": "Doechii",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ec/cc/d6/ecccd6d4-2250-5caf-a98d-1ba10baf67f5/24UMGIM88644.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/anxiety/1801819644?i=1801820501&uo=4",
+    "title": "Anxiety"
+  },
+  "hh04": {
+    "artist": "Tyler, The Creator",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b6/ef/ee/b6efeefa-fc99-37d1-ad21-0d769b2a4958/196872796971.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/sticky-feat-glorilla-sexyy-red-lil-wayne/1789446415?i=1789446432&uo=4",
+    "title": "Sticky"
+  },
+  "hh05": {
+    "artist": "Future, Metro Boomin & Kendrick Lamar",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/fe/b6/46/feb64670-4fe7-bbc0-1101-c5f11bfb6905/196871937399.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/like-that/1737320962?i=1737320971&uo=4",
+    "title": "Like That"
+  },
+  "hh06": {
+    "artist": "Travis Scott & Playboi Carti",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/7d/4f/94/7d4f9468-56e1-3a2d-7186-c8088170ef58/196871341899.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/fe-n-feat-playboi-carti/1708274558?i=1708274783&uo=4",
+    "title": "FE!N"
+  },
+  "hh07": {
+    "artist": "Kendrick Lamar",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/54/28/14/54281424-eece-0935-299d-fdd2ab403f92/24UM1IM28978.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/tv-off-feat-lefty-gunplay/1781316864?i=1781316952&uo=4",
+    "title": "tv off"
+  },
+  "hh08": {
+    "artist": "Kendrick Lamar",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/54/28/14/54281424-eece-0935-299d-fdd2ab403f92/24UM1IM28978.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/squabble-up/1781316864?i=1781316884&uo=4",
+    "title": "squabble up"
+  },
+  "hh09": {
+    "artist": "Drake, Sexyy Red & SZA",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/fa/9e/e6/fa9ee672-0880-2b5b-a69d-981e8fcb807e/23UM1IM09863.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/rich-baby-daddy-feat-sexyy-red-sza/1710694554?i=1710694759&uo=4",
+    "title": "Rich Baby Daddy"
+  },
+  "hh10": {
+    "artist": "Future, Metro Boomin, Travis Scott & Playboi Carti",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/fe/b6/46/feb64670-4fe7-bbc0-1101-c5f11bfb6905/196871937399.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/type-shit/1737320962?i=1737320968&uo=4",
+    "title": "Type Shit"
+  },
+  "hh11": {
+    "artist": "21 Savage",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/77/84/5e/77845ee7-573c-efcc-4ce4-c9625fdce8c7/196871714556.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/redrum/1725240183?i=1725240530&uo=4",
+    "title": "redrum"
+  },
+  "hh12": {
+    "artist": "Travis Scott & Drake",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/7d/4f/94/7d4f9468-56e1-3a2d-7186-c8088170ef58/196871341899.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/meltdown-feat-drake/1708274558?i=1708274779&uo=4",
+    "title": "MELTDOWN"
+  },
+  "hh13": {
+    "artist": "Megan Thee Stallion",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/1c/9c/c8/1c9cc81e-41db-452b-5ee9-60bd59f09f44/075679656506.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/hiss/1727623037?i=1727623042&uo=4",
+    "title": "HISS"
+  },
+  "hh14": {
+    "artist": "Central Cee & Lil Baby",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/e1/2d/c5/e12dc546-b50d-5a06-58cf-94227b0c78b9/196872154931.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/band4band/1749412136?i=1749412138&uo=4",
+    "title": "BAND4BAND"
+  },
+  "hh15": {
+    "artist": "GloRilla",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/53/5e/05/535e05aa-09d5-b91d-b994-c8f82461c8be/24UMGIM66934.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/tgif/1752804571?i=1752804574&uo=4",
+    "title": "TGIF"
+  },
+  "hh16": {
+    "artist": "Kendrick Lamar",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/ab/16/ef/ab16efe9-e7f1-66ec-021c-5592a23f0f9e/17UMGIM88793.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/humble/1440881722?i=1440882165&uo=4",
+    "title": "HUMBLE."
+  },
+  "hh17": {
+    "artist": "Travis Scott",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/e7/49/8f/e7498f65-df8f-bead-d6e3-2a8d4d642a79/886447235317.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/sicko-mode/1421658111?i=1421658123&uo=4",
+    "title": "SICKO MODE"
+  },
+  "hh18": {
+    "artist": "Travis Scott",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/b8/e5/27/b8e527c8-aaf4-c7b7-5562-c479458ed7d9/886446092645.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/goosebumps/1151481435?i=1151481750&uo=4",
+    "title": "goosebumps"
+  },
+  "hh19": {
+    "artist": "Travis Scott",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/30/66/90/306690d4-2a29-402e-e406-6b319ce7731a/886447227169.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/butterfly-effect/1421241217?i=1421243623&uo=4",
+    "title": "BUTTERFLY EFFECT"
+  },
+  "hh20": {
+    "artist": "Future",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music127/v4/f9/10/59/f9105950-7370-e2ac-20b5-f82b9ccdc593/886446559476.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/mask-off-marshmello-remix/1248449684?i=1248449699&uo=4",
+    "title": "Mask Off"
+  },
+  "hh21": {
+    "artist": "Future & Drake",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/25/41/4e/25414e8c-0201-866a-2e0c-1315ff649f6a/886448218852.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/life-is-good-feat-drake/1494388435?i=1494388436&uo=4",
+    "title": "Life Is Good"
+  },
+  "hh22": {
+    "artist": "Future, Drake & Tems",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/c8/4c/fa/c84cfa03-1916-89f1-5362-03425fbe2ff9/196589073709.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/wait-for-u-feat-drake-tems/1621610722?i=1621611495&uo=4",
+    "title": "WAIT FOR U"
+  },
+  "hh23": {
+    "artist": "Future & The Weeknd",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music69/v4/35/39/ef/3539eff9-49dc-db4d-7e82-22244f17c5f4/886445733785.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/low-life-feat-the-weeknd/1081197061?i=1081197290&uo=4",
+    "title": "Low Life"
+  },
+  "hh24": {
+    "artist": "Drake & 21 Savage",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/6d/31/ab/6d31abaf-7a07-05f1-13ad-72ec520b6bfb/22UMGIM67374.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/jimmy-cooks-feat-21-savage/1630221591?i=1630221907&uo=4",
+    "title": "Jimmy Cooks"
+  },
+  "hh25": {
+    "artist": "Drake & 21 Savage",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/e1/6e/6a/e16e6a89-3e6d-1936-1a9c-b51680bcd4c1/22UM1IM29132.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/rich-flex/1653012564?i=1653012565&uo=4",
+    "title": "Rich Flex"
+  },
+  "hh26": {
+    "artist": "Drake & J. Cole",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/fa/9e/e6/fa9ee672-0880-2b5b-a69d-981e8fcb807e/23UM1IM09863.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/first-person-shooter-feat-j-cole/1710694554?i=1710694569&uo=4",
+    "title": "First Person Shooter"
+  },
+  "hh27": {
+    "artist": "Drake",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bb/6d/8f/bb6d8f67-6d04-10b5-dd62-eb5809ac54fc/00602567879152.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/nonstop/1406109769?i=1406109777&uo=4",
+    "title": "Nonstop"
+  },
+  "hh28": {
+    "artist": "Drake",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bb/6d/8f/bb6d8f67-6d04-10b5-dd62-eb5809ac54fc/00602567879152.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/gods-plan/1406109769?i=1406109863&uo=4",
+    "title": "God's Plan"
+  },
+  "hh29": {
+    "artist": "Drake",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bb/6d/8f/bb6d8f67-6d04-10b5-dd62-eb5809ac54fc/00602567879152.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/in-my-feelings/1406109769?i=1406109901&uo=4",
+    "title": "In My Feelings"
+  },
+  "hh30": {
+    "artist": "Drake, 21 Savage & Project Pat",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/cb/6b/5f/cb6b5fc3-8d35-908a-18e6-6f8eda46ce11/21UM1IM07521.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/knife-talk-feat-21-savage-project-pat/1584449196?i=1584449220&uo=4",
+    "title": "Knife Talk"
+  },
+  "hh31": {
+    "artist": "J. Cole",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/ee/28/67/ee286794-6c33-a8c2-5c37-c04f1cb5e8a6/21UM1IM54415.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/no-role-modelz/1600772499?i=1600773036&uo=4",
+    "title": "No Role Modelz"
+  },
+  "hh32": {
+    "artist": "J. Cole",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/00/fd/ce/00fdceb3-c202-ae9a-052a-cce5c8622d5c/00810760037716.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/middle-child/1450406397?i=1450406398&uo=4",
+    "title": "MIDDLE CHILD"
+  },
+  "hh33": {
+    "artist": "21 Savage & J. Cole",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/07/94/f7/0794f7c3-0042-6aa8-022e-ae008868eb75/886447365144.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/a-lot/1447452167?i=1447452168&uo=4",
+    "title": "a lot"
+  },
+  "hh34": {
+    "artist": "21 Savage",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music127/v4/5e/f5/9d/5ef59d0c-4a01-56c5-81c2-c2a2942f55f7/886446601298.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/bank-account/1256644768?i=1256644817&uo=4",
+    "title": "Bank Account"
+  },
+  "hh35": {
+    "artist": "21 Savage & Metro Boomin",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/53/ed/40/53ed4078-7d2a-076e-f9b9-ffb29e776c42/886448747703.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/runnin/1534263780?i=1534264266&uo=4",
+    "title": "Runnin"
+  },
+  "hh36": {
+    "artist": "Metro Boomin, Future & Chris Brown",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/82/f7/2b/82f72ba4-524c-fc9d-cb8c-5a96d2ddf536/22UM1IM35267.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/superhero-heroes-villains/1657583857?i=1657583932&uo=4",
+    "title": "Superhero (Heroes & Villains)"
+  },
+  "hh37": {
+    "artist": "Metro Boomin, The Weeknd & 21 Savage",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/82/f7/2b/82f72ba4-524c-fc9d-cb8c-5a96d2ddf536/22UM1IM35267.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/creepin/1657583857?i=1657584259&uo=4",
+    "title": "Creepin'"
+  },
+  "hh38": {
+    "artist": "Metro Boomin & Don Toliver",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/82/f7/2b/82f72ba4-524c-fc9d-cb8c-5a96d2ddf536/22UM1IM35267.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/too-many-nights-feat-don-toliver/1657583857?i=1657583940&uo=4",
+    "title": "Too Many Nights"
+  },
+  "hh39": {
+    "artist": "Metro Boomin, Travis Scott & Young Thug",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/82/f7/2b/82f72ba4-524c-fc9d-cb8c-5a96d2ddf536/22UM1IM35267.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/trance/1657583857?i=1657584149&uo=4",
+    "title": "Trance"
+  },
+  "hh40": {
+    "artist": "A$AP Rocky & Skepta",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/d3/91/9c/d3919c54-3426-07a2-91a4-b4e46b2a8d34/886447076453.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/praise-the-lord-da-shine-feat-skepta/1388565682?i=1388566993&uo=4",
+    "title": "Praise The Lord (Da Shine)"
+  },
+  "hh41": {
+    "artist": "A$AP Rocky",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/1a/c1/6a/1ac16a12-cfb5-269e-fa3e-ac9080ad420b/886447427460.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/sundress/1442956429?i=1442956431&uo=4",
+    "title": "Sundress"
+  },
+  "hh42": {
+    "artist": "Gunna",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/5c/9d/0c/5c9d0c9b-ae5a-5b4c-fb27-f2d1a606411d/075679675576.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/fukumean-instrumental/1697557451?i=1697558224&uo=4",
+    "title": "fukumean"
+  },
+  "hh43": {
+    "artist": "Gunna, Future & Young Thug",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/8d/43/bf/8d43bf02-9bd8-6dd9-a3e0-662175cf7a2b/810043689250.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/pushin-p-feat-young-thug/1604376321?i=1604376332&uo=4",
+    "title": "pushin P"
+  },
+  "hh44": {
+    "artist": "Lil Baby & Gunna",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/73/2f/51/732f51a6-2f11-bdf6-dffc-f8b68e22b7ad/18UMGIM62580.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/drip-too-hard/1437958608?i=1437958680&uo=4",
+    "title": "Drip Too Hard"
+  },
+  "hh46": {
+    "artist": "Lil Baby",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/03/73/c3/0373c310-69ad-747f-ae78-14cf03b0464b/20UMGIM30254.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/sum-2-prove/1534811491?i=1534811833&uo=4",
+    "title": "Sum 2 Prove"
+  },
+  "hh47": {
+    "artist": "Lil Uzi Vert",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/02/ed/6f/02ed6f77-7e89-ca9c-4d5a-83088113cbe8/075679887955.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/xo-tour-llif3/1274598012?i=1274598339&uo=4",
+    "title": "XO TOUR Llif3"
+  },
+  "hh48": {
+    "artist": "Lil Uzi Vert",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/e8/f3/b9/e8f3b9fd-979c-7def-e314-13a021dea301/075679711694.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/just-wanna-rock/1650201273?i=1650201274&uo=4",
+    "title": "Just Wanna Rock"
+  },
+  "rb01": {
+    "artist": "Kendrick Lamar & SZA",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/50/c2/cc/50c2cc95-3658-9417-0d4b-831abde44ba1/24UM1IM28978.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/luther/1781270319?i=1781270323&uo=4",
+    "title": "luther"
+  },
+  "rb02": {
+    "artist": "The Weeknd & Playboi Carti",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/2d/dd/f7/2dddf721-a46d-439d-65df-b7ec60d9de7b/25UMGIM63126.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/timeless-feat-playboi-carti-remix/1812513238?i=1812513241&uo=4",
+    "title": "Timeless"
+  },
+  "rb03": {
+    "artist": "SZA",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/62/93/13/6293132e-20ff-67ab-3d1f-96bb6797a6ba/196589564955.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/snooze/1658650093?i=1658650499&uo=4",
+    "title": "Snooze"
+  },
+  "rb04": {
+    "artist": "Chris Brown",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/2d/5c/c1/2d5cc1a6-86ce-ee16-5985-807f2fffa3cb/196871957267.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/residuals/1740205873?i=1740206493&uo=4",
+    "title": "Residuals"
+  },
+  "rb05": {
+    "artist": "Tyla",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/1e/c9/5b/1ec95bbc-a56f-cbef-070c-ddec9f4fdd3c/196871296205.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/water/1699082722?i=1699082734&uo=4",
+    "title": "Water"
+  },
+  "rb06": {
+    "artist": "Jorja Smith",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/95/ae/4d/95ae4d38-6ddf-91a3-7521-2d7b5ac864d9/197188663407.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/little-things/1682552231?i=1682552234&uo=4",
+    "title": "Little Things"
+  },
+  "rb07": {
+    "artist": "SZA",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/0f/90/a8/0f90a856-0447-d846-fa7b-b9c937e72310/196871881180.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/saturn/1732348411?i=1732348414&uo=4",
+    "title": "Saturn"
+  },
+  "rb08": {
+    "artist": "Mariah the Scientist",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/44/0b/b4/440bb4fb-9717-f27d-4486-9e31718fffa4/196873070889.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/burning-blue/1811228834?i=1811228836&uo=4",
+    "title": "Burning Blue"
+  },
+  "rb09": {
+    "artist": "SZA & Kendrick Lamar",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/50/fa/17/50fa1760-8a36-5cef-93bf-aab5b5257b18/196871766913.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/30-for-30-with-kendrick-lamar/1796270264?i=1796270267&uo=4",
+    "title": "30 For 30"
+  },
+  "rb10": {
+    "artist": "Daniel Caesar",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/24/4f/ec/244fec58-ea20-e0b0-eea6-e06c6aff948b/23UMGIM14483.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/superpowers/1671667136?i=1671667306&uo=4",
+    "title": "Superpowers"
+  },
+  "rb11": {
+    "artist": "Coco Jones",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/f2/50/6c/f2506c6c-89b0-6190-2e49-277dfe822c72/23UMGIM00653.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/icu/1663412731?i=1663412735&uo=4",
+    "title": "ICU"
+  },
+  "rb12": {
+    "artist": "Muni Long",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/1c/c1/e0/1cc1e064-255c-e1b8-71fa-00cc68a5918e/23UM1IM06665.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/made-for-me/1707416056?i=1707416065&uo=4",
+    "title": "Made For Me"
+  },
+  "rb13": {
+    "artist": "Giveon",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/51/89/1b/51891b63-e1cd-bda7-9473-31fb6b473040/886448298816.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/heartbreak-anniversary/1499127836?i=1499127838&uo=4",
+    "title": "Heartbreak Anniversary"
+  },
+  "rb14": {
+    "artist": "Victoria Monét",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/e3/25/75/e32575d1-b61c-2b10-ba5d-a4c9e9a0e4cf/196871133715.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/on-my-mama/1690628887?i=1690628891&uo=4",
+    "title": "On My Mama"
+  },
+  "rb15": {
+    "artist": "Daniel Caesar & H.E.R.",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/b6/cd/1a/b6cd1a5b-83af-a1e2-0ad7-ea530fcf2522/859722261219.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/best-part-feat-h-e-r/1799080774?i=1799080776&uo=4",
+    "title": "Best Part"
+  },
+  "rb16": {
+    "artist": "SZA",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/bd/3b/a9/bd3ba9fb-9609-144f-bcfe-ead67b5f6ab3/196589564931.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/kill-bill/1657869377?i=1657869393&uo=4",
+    "title": "Kill Bill"
+  },
+  "rb17": {
+    "artist": "SZA",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/62/93/13/6293132e-20ff-67ab-3d1f-96bb6797a6ba/196589564955.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/good-days/1658650093?i=1658650802&uo=4",
+    "title": "Good Days"
+  },
+  "rb18": {
+    "artist": "SZA",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/62/93/13/6293132e-20ff-67ab-3d1f-96bb6797a6ba/196589564955.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/nobody-gets-me/1658650093?i=1658650791&uo=4",
+    "title": "Nobody Gets Me"
+  },
+  "rb19": {
+    "artist": "SZA",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/75/73/39/75733929-5ce0-234e-6861-0e3932fa342a/886446852157.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/the-weekend-funk-wav-remix/1324746772?i=1324747044&uo=4",
+    "title": "The Weekend"
+  },
+  "rb20": {
+    "artist": "SZA & Travis Scott",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/a2/bc/ad/a2bcad46-b389-4be1-8bac-5a0959b0b8e4/886446548449.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/love-galore-feat-travis-scott/1239977075?i=1239977713&uo=4",
+    "title": "Love Galore"
+  },
+  "rb21": {
+    "artist": "SZA",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/a2/bc/ad/a2bcad46-b389-4be1-8bac-5a0959b0b8e4/886446548449.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/broken-clocks/1239977075?i=1239977721&uo=4",
+    "title": "Broken Clocks"
+  },
+  "rb22": {
+    "artist": "Kendrick Lamar & SZA",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/4d/16/55/4d165549-3d11-86dc-fcbf-be7fe0bcadfb/18UMGIM00002.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/all-the-stars/1440903005?i=1440903307&uo=4",
+    "title": "All The Stars"
+  },
+  "rb23": {
+    "artist": "The Weeknd",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/e2/61/f8/e261f8c1-73db-9a7a-c89e-1068f19970e0/16UMGIM67863.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/die-for-you/1440871397?i=1440872304&uo=4",
+    "title": "Die For You"
+  },
+  "rb24": {
+    "artist": "The Weeknd",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/2f/22/a9/2f22a9a6-5af1-5846-a44e-ba016724ed69/21UM1IM58860.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/out-of-time/1603171516?i=1603171870&uo=4",
+    "title": "Out of Time"
+  },
+  "rb25": {
+    "artist": "The Weeknd",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/fd/7a/13/fd7a1394-5ce1-6da6-93ad-977533762a1f/15UMGIM00463.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/earned-it/1440845197?i=1440845641&uo=4",
+    "title": "Earned It"
+  },
+  "rb26": {
+    "artist": "The Weeknd",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/db/22/4e/db224ee0-b058-5d06-9a8c-fa10662bd58e/18UMGIM17205.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/call-out-my-name/1363308558?i=1363308560&uo=4",
+    "title": "Call Out My Name"
+  },
+  "rb27": {
+    "artist": "The Weeknd",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6f/bc/e6/6fbce6c4-c38c-72d8-4fd0-66cfff32f679/20UMGIM12176.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/after-hours/1499378108?i=1499378615&uo=4",
+    "title": "After Hours"
+  },
+  "rb28": {
+    "artist": "The Weeknd & Daft Punk",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/e2/61/f8/e261f8c1-73db-9a7a-c89e-1068f19970e0/16UMGIM67863.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/i-feel-it-coming-feat-daft-punk/1440871397?i=1440872309&uo=4",
+    "title": "I Feel It Coming"
+  },
+  "rb29": {
+    "artist": "Daniel Caesar & Kali Uchis",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/03/6b/41/036b4137-ffe3-0006-9d32-3e6bdc07172d/859718291305.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/get-you-feat-kali-uchis/1799080474?i=1799080486&uo=4",
+    "title": "Get You"
+  },
+  "rb31": {
+    "artist": "Daniel Caesar",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/91/30/85/9130858b-bc2c-ec38-cf9f-864befea4374/23UMGIM38673.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/always/1681329711?i=1681329730&uo=4",
+    "title": "Always"
+  },
+  "rb33": {
+    "artist": "H.E.R.",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/27/40/34/274034b3-42d9-ba59-b22c-dc4f57672ee0/886446799513.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/focus/1294890052?i=1294890800&uo=4",
+    "title": "Focus"
+  },
+  "rb34": {
+    "artist": "H.E.R.",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/94/1b/39/941b39bf-e997-4a29-ffb7-196d46d7e7a9/886448213802.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/damage/1535678188?i=1535678349&uo=4",
+    "title": "Damage"
+  },
+  "rb35": {
+    "artist": "H.E.R. & Bryson Tiller",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/1e/31/73/1e3173e4-a0f0-4b26-5ff9-c2c07d4335a6/886447876732.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/couldve-been-feat-bryson-tiller/1477672433?i=1477672845&uo=4",
+    "title": "Could've Been"
+  },
+  "rb36": {
+    "artist": "H.E.R. & Chris Brown",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/c1/12/70/c112701f-e02a-d3c1-14cc-8f81284d9546/886449216123.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/come-through-feat-chris-brown/1563811746?i=1563811747&uo=4",
+    "title": "Come Through"
+  },
+  "rb37": {
+    "artist": "Bryson Tiller",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/87/b1/2f/87b12f45-de6b-fb0e-870a-8323004321fb/886448804413.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/exchange/1533743775?i=1533743785&uo=4",
+    "title": "Exchange"
+  },
+  "rb38": {
+    "artist": "Bryson Tiller",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/b6/80/3c/b6803c18-1285-3c66-ec98-5e423e7268f8/886445447828.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/dont/1031334412?i=1031334418&uo=4",
+    "title": "Don't"
+  },
+  "rb40": {
+    "artist": "PARTYNEXTDOOR & Drake",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/cd/3c/da/cd3cda94-8f7b-8368-3fa3-53abca7baf6a/808391400252.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/come-and-see-me-feat-drake/6803235614?i=6803236214&uo=4",
+    "title": "Come and See Me"
+  },
+  "rb41": {
+    "artist": "PARTYNEXTDOOR & Drake",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/80/44/09/804409df-b7a1-6b68-288b-c1869b6bdfea/93624935247.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/recognize-feat-drake/6814095410?i=6814095701&uo=4",
+    "title": "Recognize"
+  },
+  "rb42": {
+    "artist": "PARTYNEXTDOOR",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/3c/25/65/3c256521-476e-af50-e9a1-6aacbe34b441/93624942191.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/break-from-toronto/6814095430?i=6814095449&uo=4",
+    "title": "Break from Toronto"
+  },
+  "rb44": {
+    "artist": "Frank Ocean",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bb/45/68/bb4568f3-68cd-619d-fbcb-4e179916545d/BlondCover-Final.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/pink-white/1146195596?i=1146195714&uo=4",
+    "title": "Pink + White"
+  },
+  "rb45": {
+    "artist": "Frank Ocean",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/04/f8/63/04f863fc-2852-604f-c910-a97ac069506b/12UMGIM40339.rgb.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/thinkin-bout-you/1440765580?i=1440766128&uo=4",
+    "title": "Thinkin Bout You"
+  },
+  "rb49": {
+    "artist": "GoldLink, Brent Faiyaz & Shy Glizzy",
+    "image": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/e7/3f/9b/e73f9bf7-d0b8-a987-9a2d-ea1c426eac09/886446320748.jpg/300x300bb.jpg",
+    "link": "https://music.apple.com/us/album/crew-feat-brent-faiyaz-shy-glizzy/1215425767?i=1215426157&uo=4",
+    "title": "Crew"
+  }
+}
