@@ -1,10 +1,28 @@
 
 "use strict";
 
-/* ==========================================
-   AFTERHOURS - STEP 17
-   FAST ALBUM ARTWORK SYSTEM
-========================================== */
+/*
+  AFTERHOURS - STEP 19
+  SUPABASE ONLINE COMMUNITY
+
+  Keep existing:
+  - HOME
+  - HIP-HOP / R&B TOP 50
+  - Artwork
+  - Monthly archives
+  - Search
+  - Navigation
+
+  Add:
+  - Anonymous authentication
+  - Online votes
+  - Global vote counts
+  - Online song requests
+*/
+
+// ========================================
+// 1. CONFIGURATION
+// ========================================
 
 const DATA = window.AFTERHOURS_DATA || {
   hiphop: [],
@@ -17,10 +35,6 @@ const genre = document.body.dataset.genre;
 const HISTORY_PREFIX = "afterhours-history-v1-";
 const COVER_PREFIX = "afterhours-cover-v2-";
 const REC_KEY = "afterhours-v2-demo-recs";
-
-/* ==========================================
-   DATE
-========================================== */
 
 const dateParts = new Intl.DateTimeFormat(
   "en-US",
@@ -39,9 +53,9 @@ const CURRENT_MONTH = `${
 
 let selectedMonth = CURRENT_MONTH;
 
-/* ==========================================
-   STORAGE
-========================================== */
+// ========================================
+// 2. COMMON FUNCTIONS
+// ========================================
 
 function readLocal(key, fallback) {
   try {
@@ -64,10 +78,6 @@ function saveLocal(key, value) {
     return false;
   }
 }
-
-/* ==========================================
-   COMMON FUNCTIONS
-========================================== */
 
 function el(tag, className = "", value) {
   const node = document.createElement(tag);
@@ -102,9 +112,9 @@ function safeUrl(value) {
   }
 }
 
-/* ==========================================
-   MONTHLY RANKING SYSTEM
-========================================== */
+// ========================================
+// 3. MONTHLY CHARTS
+// ========================================
 
 function monthLabel(value) {
   const [year, month] = value
@@ -170,7 +180,7 @@ function saveCurrentHistory() {
 
     const tracks = getTracks(type);
 
-    if (tracks.length === 0) {
+    if (!tracks.length) {
       continue;
     }
 
@@ -181,7 +191,6 @@ function saveCurrentHistory() {
         genre: type,
         dataType: "DEMO",
         createdAt: new Date().toISOString(),
-
         tracks: tracks.map((track, index) => ({
           id: track.id,
           title: track.title,
@@ -198,21 +207,17 @@ function selectedTracks() {
     return getTracks(genre);
   }
 
-  const saved = getHistory(
+  const tracks = getHistory(
     selectedMonth,
     genre
   );
 
-  return saved
-    ? [...saved]
+  return tracks
+    ? [...tracks]
         .sort((a, b) => a.rank - b.rank)
         .slice(0, 50)
     : [];
 }
-
-/* ==========================================
-   RANK MOVEMENT
-========================================== */
 
 function getMovement(track, rank) {
   const previous = getHistory(
@@ -220,7 +225,7 @@ function getMovement(track, rank) {
     genre
   );
 
-  if (!previous || previous.length === 0) {
+  if (!previous?.length) {
     return {
       label: "—",
       color: "#8c97b0"
@@ -288,18 +293,18 @@ function movementElement(track, rank) {
   return node;
 }
 
-/* ==========================================
-   MONTH SELECTOR
-========================================== */
-
 function availableMonths(type) {
   const months = new Set([CURRENT_MONTH]);
 
   try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
+    for (
+      let i = 0;
+      i < localStorage.length;
+      i++
+    ) {
+      const key = localStorage.key(i) || "";
 
-      const match = key &&
+      const match =
         /^afterhours-history-v1-(\d{4}-\d{2})-(hiphop|rnb)$/
           .exec(key);
 
@@ -313,7 +318,7 @@ function availableMonths(type) {
       }
     }
   } catch {
-    // Local storage unavailable.
+    // Storage unavailable
   }
 
   return [...months].sort().reverse();
@@ -334,16 +339,19 @@ function initMonthSelector() {
     ".chart-tools"
   );
 
-  if (!tools || tools.querySelector("#month-select")) {
+  if (
+    !tools ||
+    tools.querySelector("#month-select")
+  ) {
     return;
   }
 
-  const wrapper = el(
+  const label = el(
     "label",
     "month-selector"
   );
 
-  wrapper.style.cssText = `
+  label.style.cssText = `
     display: flex;
     flex-direction: column;
     gap: 7px;
@@ -352,7 +360,7 @@ function initMonthSelector() {
     letter-spacing: 0.08em;
   `;
 
-  wrapper.append(
+  label.append(
     el("span", "", "CHART MONTH")
   );
 
@@ -387,6 +395,7 @@ function initMonthSelector() {
     );
 
     option.value = value;
+
     select.append(option);
   });
 
@@ -398,59 +407,53 @@ function initMonthSelector() {
     renderChart();
   });
 
-  wrapper.append(select);
-  tools.prepend(wrapper);
+  label.append(select);
+  tools.prepend(label);
 }
 
-/* ==========================================
-   FAST ARTWORK SYSTEM
-========================================== */
-
-// First load saved artwork URLs.
-// This avoids searching Apple for every song
-// each time the page opens.
+// ========================================
+// 4. ARTWORK SYSTEM
+// ========================================
 
 const ARTWORK_MANIFEST = fetch(
   "images/artwork-map.json",
-  { cache: "no-cache" }
+  {
+    cache: "no-cache"
+  }
 )
   .then(response => {
     return response.ok
       ? response.json()
       : {};
   })
-  .then(value => {
-    return value && typeof value === "object"
-      ? value
-      : {};
-  })
   .catch(() => ({}));
 
 const artworkPromises = new Map();
-const artworkNodes = new WeakMap();
+const coverTracks = new WeakMap();
 
 let requestQueue = Promise.resolve();
 let lastRequestAt = 0;
 
-/* ==========================================
-   VALIDATE ARTWORK
-========================================== */
-
-function validArtwork(entry, track) {
-  if (!entry || typeof entry !== "object") {
+function artworkEntry(entry, track) {
+  if (
+    !entry ||
+    typeof entry !== "object"
+  ) {
     return null;
   }
 
   if (
     entry.title &&
-    normalize(entry.title) !== normalize(track.title)
+    normalize(entry.title) !==
+      normalize(track.title)
   ) {
     return null;
   }
 
   if (
     entry.artist &&
-    normalize(entry.artist) !== normalize(track.artist)
+    normalize(entry.artist) !==
+      normalize(track.artist)
   ) {
     return null;
   }
@@ -465,29 +468,14 @@ function validArtwork(entry, track) {
     : null;
 }
 
-function improveArtworkSize(url) {
-  if (!url) {
-    return null;
-  }
-
-  return safeUrl(
-    url.replace(
-      /\b\d+x\d+bb(?=\.)/,
-      "300x300bb"
-    )
-  );
-}
-
-/* ==========================================
-   FALLBACK ARTWORK SEARCH
-========================================== */
-
 function lookupLiveArtwork(track) {
-  const key = [
-    normalize(track.id),
-    normalize(track.title),
+  const key = `${
+    track.id
+  }:${
+    normalize(track.title)
+  }:${
     normalize(track.artist)
-  ].join("-");
+  }`;
 
   if (artworkPromises.has(key)) {
     return artworkPromises.get(key);
@@ -501,16 +489,19 @@ function lookupLiveArtwork(track) {
   if (
     cached &&
     typeof cached.savedAt === "number" &&
-    Date.now() - cached.savedAt < 7 * 86400000
+    Date.now() - cached.savedAt <
+      7 * 86400000
   ) {
-    const valid = validArtwork(
+    const valid = artworkEntry(
       cached.result,
       track
     );
 
     if (valid) {
       const result = Promise.resolve(valid);
+
       artworkPromises.set(key, result);
+
       return result;
     }
   }
@@ -521,7 +512,7 @@ function lookupLiveArtwork(track) {
       3200 - (Date.now() - lastRequestAt)
     );
 
-    if (pause > 0) {
+    if (pause) {
       await new Promise(resolve => {
         setTimeout(resolve, pause);
       });
@@ -546,48 +537,50 @@ function lookupLiveArtwork(track) {
         return null;
       }
 
-      const data = await response.json();
+      const payload = await response.json();
 
-      const targetTitle = normalize(
+      const title = normalize(
         track.title
       );
 
-      const mainArtist = normalize(
+      const artist = normalize(
         track.artist.split(
           /,|&|\bfeat\.?\b|\bft\.?\b/i
         )[0]
       );
 
-      const match = (data.results || []).find(
-        item => {
-          const foundTitle = normalize(
-            item.trackName
-          );
+      const match = (
+        payload.results || []
+      ).find(item => {
+        const matchTitle = normalize(
+          item.trackName
+        );
 
-          const foundArtist = normalize(
-            item.artistName
-          );
-
-          return (
-            (
-              foundTitle === targetTitle ||
-              foundTitle.startsWith(targetTitle)
-            ) &&
-            foundArtist.includes(mainArtist) &&
-            safeUrl(item.artworkUrl100)
-          );
-        }
-      );
+        return (
+          (
+            matchTitle === title ||
+            matchTitle.startsWith(title)
+          ) &&
+          normalize(item.artistName)
+            .includes(artist) &&
+          safeUrl(item.artworkUrl100)
+        );
+      });
 
       if (!match) {
         return null;
       }
 
       const result = {
-        image: improveArtworkSize(
-          match.artworkUrl100
+        image: safeUrl(
+          match.artworkUrl100.replace(
+            /\b\d+x\d+bb(?=\.)/,
+            "300x300bb"
+          )
         ),
-        link: safeUrl(match.trackViewUrl)
+        link: safeUrl(match.trackViewUrl),
+        title: track.title,
+        artist: track.artist
       };
 
       if (!result.image) {
@@ -598,11 +591,7 @@ function lookupLiveArtwork(track) {
         COVER_PREFIX + track.id,
         {
           savedAt: Date.now(),
-          result: {
-            ...result,
-            title: track.title,
-            artist: track.artist
-          }
+          result
         }
       );
 
@@ -625,40 +614,26 @@ function lookupLiveArtwork(track) {
 async function resolveArtwork(track) {
   const manifest = await ARTWORK_MANIFEST;
 
-  const saved = validArtwork(
-    manifest[track.id],
-    track
+  return (
+    artworkEntry(manifest[track.id], track) ||
+    lookupLiveArtwork(track)
   );
-
-  if (saved) {
-    return saved;
-  }
-
-  return lookupLiveArtwork(track);
 }
 
-/* ==========================================
-   DISPLAY ARTWORK
-========================================== */
-
-async function displayArtwork(
-  cover,
-  track,
-  highPriority = false
-) {
+async function displayArtwork(cover, track) {
   if (
     !cover ||
     !track ||
-    cover.dataset.coverRequested === "yes"
+    cover.dataset.requested
   ) {
     return;
   }
 
-  cover.dataset.coverRequested = "yes";
+  cover.dataset.requested = "true";
 
-  const artwork = await resolveArtwork(track);
+  const result = await resolveArtwork(track);
 
-  if (!artwork || !cover.isConnected) {
+  if (!result || !cover.isConnected) {
     return;
   }
 
@@ -666,11 +641,6 @@ async function displayArtwork(
 
   img.alt = `${track.title} album artwork`;
   img.decoding = "async";
-  img.loading = "eager";
-
-  if (highPriority) {
-    img.fetchPriority = "high";
-  }
 
   img.style.cssText = `
     display: block;
@@ -686,21 +656,20 @@ async function displayArtwork(
 
     const link = el("a");
 
-    link.href = artwork.link ||
+    link.href =
+      result.link ||
       `https://music.apple.com/us/search?term=${
         encodeURIComponent(
-          `${track.title} ${track.artist}`
+          track.title + " " + track.artist
         )
       }`;
 
     link.target = "_blank";
     link.rel = "noopener noreferrer";
 
-    link.title = `Open ${track.title} in Apple Music`;
-
     link.setAttribute(
       "aria-label",
-      link.title
+      `Open ${track.title} in Apple Music`
     );
 
     link.style.cssText = `
@@ -711,20 +680,11 @@ async function displayArtwork(
     `;
 
     link.append(img);
-
     cover.replaceChildren(link);
   };
 
-  img.onerror = () => {
-    // Keep the initial-letter placeholder.
-  };
-
-  img.src = artwork.image;
+  img.src = result.image;
 }
-
-/* ==========================================
-   LAZY LOADING
-========================================== */
 
 const coverObserver =
   "IntersectionObserver" in window
@@ -739,17 +699,10 @@ const coverObserver =
               entry.target
             );
 
-            const value = artworkNodes.get(
-              entry.target
+            displayArtwork(
+              entry.target,
+              coverTracks.get(entry.target)
             );
-
-            if (value) {
-              displayArtwork(
-                entry.target,
-                value.track,
-                value.highPriority
-              );
-            }
           });
         },
         {
@@ -772,39 +725,25 @@ function makeCover(track, index) {
   cover.style.position = "relative";
   cover.style.overflow = "hidden";
 
-  artworkNodes.set(
-    cover,
-    {
-      track,
-      highPriority: index < 3
-    }
-  );
+  coverTracks.set(cover, track);
 
   if (coverObserver) {
     coverObserver.observe(cover);
   } else {
-    displayArtwork(
-      cover,
-      track,
-      index < 3
-    );
+    displayArtwork(cover, track);
   }
 
   return cover;
 }
 
-/* ==========================================
-   MUSIC LINKS
-========================================== */
+// ========================================
+// 5. MUSIC LINKS
+// ========================================
 
 function musicLink(track, service) {
   const term = encodeURIComponent(
     `${track.title} ${track.artist}`
   );
-
-  const url = service === "Spotify"
-    ? `https://open.spotify.com/search/${term}`
-    : `https://music.apple.com/us/search?term=${term}`;
 
   const link = el(
     "a",
@@ -812,7 +751,10 @@ function musicLink(track, service) {
     service === "Spotify" ? "SP" : "AM"
   );
 
-  link.href = url;
+  link.href = service === "Spotify"
+    ? `https://open.spotify.com/search/${term}`
+    : `https://music.apple.com/us/search?term=${term}`;
+
   link.target = "_blank";
   link.rel = "noopener noreferrer";
 
@@ -825,7 +767,10 @@ function musicLink(track, service) {
 }
 
 function makeLinks(track) {
-  const box = el("div", "track-links");
+  const box = el(
+    "div",
+    "track-links"
+  );
 
   box.append(
     musicLink(track, "Spotify"),
@@ -835,9 +780,431 @@ function makeLinks(track) {
   return box;
 }
 
-/* ==========================================
-   VOTING SYSTEM
-========================================== */
+// ========================================
+// 6. SUPABASE CONNECTION
+// ========================================
+
+let cloudMode = "connecting";
+let db = null;
+let cloudUserId = null;
+
+const globalCounts = new Map();
+const cloudVotes = new Set();
+const busyVotes = new Set();
+
+let myRequests = [];
+let recommendationForm = null;
+let recommendationList = null;
+
+function setCommunityStatus(message) {
+  let notice = document.querySelector(
+    "#community-connection-state"
+  );
+
+  if (!notice) {
+    const container =
+      document.querySelector(".chart-tools") ||
+      document.querySelector("#recommend-form");
+
+    if (!container) {
+      return;
+    }
+
+    notice = el("p", "", message);
+
+    notice.id = "community-connection-state";
+
+    notice.style.cssText = `
+      font: 600 11px monospace;
+      letter-spacing: .03em;
+      color: #95a1bb;
+      margin: 8px 0;
+    `;
+
+    container.after(notice);
+  }
+
+  notice.textContent = message;
+}
+
+function refreshUI() {
+  document
+    .querySelectorAll("[data-vote-track]")
+    .forEach(button => {
+      updateVoteButton(
+        button,
+        button.dataset.voteTrack
+      );
+    });
+
+  renderRecommendations();
+
+  const messages = {
+    ready:
+      "ONLINE COMMUNITY / VOTES SAVED TO SUPABASE (CHART ORDER IS DEMO)",
+
+    demo:
+      "DEMO MODE / VOTES AND REQUESTS SAVED ON THIS DEVICE",
+
+    connecting:
+      "CONNECTING TO AFTERHOURS COMMUNITY...",
+
+    error:
+      "COMMUNITY DATABASE UNAVAILABLE / ONLINE VOTES PAUSED"
+  };
+
+  setCommunityStatus(
+    messages[cloudMode]
+  );
+}
+
+function scriptLoad(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement(
+      "script"
+    );
+
+    script.src = src;
+
+    script.onload = resolve;
+
+    script.onerror = () => {
+      reject(
+        new Error(
+          `Failed to load: ${src}`
+        )
+      );
+    };
+
+    document.head.append(script);
+  });
+}
+
+async function initCloud() {
+  try {
+    // Load local public configuration
+    await scriptLoad(
+      "js/supabase-config.js"
+    );
+
+    const config =
+      window.AFTERHOURS_SUPABASE;
+
+    if (
+      !config ||
+      !safeUrl(config.url) ||
+      !config.publishableKey ||
+      config.url.includes("YOUR_PROJECT_REF") ||
+      config.publishableKey.includes(
+        "REPLACE_WITH_YOUR_KEY"
+      )
+    ) {
+      cloudMode = "demo";
+      refreshUI();
+      return;
+    }
+
+    // Load Supabase JavaScript SDK
+    await scriptLoad(
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    );
+
+    if (!window.supabase?.createClient) {
+      throw new Error(
+        "Supabase SDK unavailable"
+      );
+    }
+
+    db = window.supabase.createClient(
+      config.url,
+      config.publishableKey,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true
+        }
+      }
+    );
+
+    const sessionResult =
+      await db.auth.getSession();
+
+    if (sessionResult.error) {
+      throw sessionResult.error;
+    }
+
+    if (!sessionResult.data.session) {
+      const signIn =
+        await db.auth.signInAnonymously();
+
+      if (signIn.error) {
+        throw signIn.error;
+      }
+    }
+
+    const userResult =
+      await db.auth.getUser();
+
+    if (
+      userResult.error ||
+      !userResult.data.user
+    ) {
+      throw (
+        userResult.error ||
+        new Error("No signed-in user")
+      );
+    }
+
+    cloudUserId =
+      userResult.data.user.id;
+
+    const [
+      voteResult,
+      countResult,
+      requestResult
+    ] = await Promise.all([
+      db.from("chart_votes")
+        .select("track_id")
+        .eq(
+          "chart_month",
+          CURRENT_MONTH
+        ),
+
+      db.rpc(
+        "get_vote_counts",
+        {
+          p_month: CURRENT_MONTH
+        }
+      ),
+
+      db.from("song_requests")
+        .select("title,artist")
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        )
+        .limit(5)
+    ]);
+
+    for (const result of [
+      voteResult,
+      countResult,
+      requestResult
+    ]) {
+      if (result.error) {
+        throw result.error;
+      }
+    }
+
+    cloudVotes.clear();
+
+    voteResult.data.forEach(row => {
+      cloudVotes.add(row.track_id);
+    });
+
+    globalCounts.clear();
+
+    countResult.data.forEach(row => {
+      globalCounts.set(
+        row.track_id,
+        Number(row.votes) || 0
+      );
+    });
+
+    myRequests = requestResult.data.map(
+      row => ({
+        song: row.title,
+        artist: row.artist
+      })
+    );
+
+    cloudMode = "ready";
+
+    refreshUI();
+
+  } catch (error) {
+    console.error(
+      "AFTERHOURS database connection:",
+      error
+    );
+
+    cloudMode =
+      window.AFTERHOURS_SUPABASE?.url
+        ?.includes("YOUR_PROJECT_REF")
+        ? "demo"
+        : "error";
+
+    refreshUI();
+  }
+}
+
+// ========================================
+// 7. VOTING SYSTEM
+// ========================================
+
+function demoVoteKey() {
+  return `afterhours-v2-demo-votes-${CURRENT_MONTH}`;
+}
+
+function getDemoVotes() {
+  const values = readLocal(
+    demoVoteKey(),
+    []
+  );
+
+  return new Set(
+    Array.isArray(values) ? values : []
+  );
+}
+
+function updateVoteButton(button, trackId) {
+  if (selectedMonth !== CURRENT_MONTH) {
+    button.textContent = "ARCHIVE";
+    button.disabled = true;
+
+    button.setAttribute(
+      "aria-pressed",
+      "false"
+    );
+
+    return;
+  }
+
+  if (cloudMode === "connecting") {
+    button.textContent = "CONNECTING...";
+    button.disabled = true;
+    return;
+  }
+
+  if (cloudMode === "error") {
+    button.textContent = "VOTE OFFLINE";
+    button.disabled = true;
+    return;
+  }
+
+  const voted = cloudMode === "ready"
+    ? cloudVotes.has(trackId)
+    : getDemoVotes().has(trackId);
+
+  const count = cloudMode === "ready"
+    ? globalCounts.get(trackId) || 0
+    : null;
+
+  button.textContent = cloudMode === "ready"
+    ? `${
+        voted ? "♥ VOTED" : "♡ VOTE"
+      } · ${count}`
+    : `${
+        voted ? "♥ DEMO VOTED" : "♡ DEMO VOTE"
+      }`;
+
+  button.disabled = busyVotes.has(trackId);
+
+  button.setAttribute(
+    "aria-pressed",
+    String(voted)
+  );
+}
+
+async function toggleVote(trackId) {
+  if (
+    selectedMonth !== CURRENT_MONTH ||
+    busyVotes.has(trackId)
+  ) {
+    return;
+  }
+
+  if (cloudMode === "demo") {
+    const votes = getDemoVotes();
+
+    if (votes.has(trackId)) {
+      votes.delete(trackId);
+    } else {
+      votes.add(trackId);
+    }
+
+    saveLocal(
+      demoVoteKey(),
+      [...votes]
+    );
+
+    refreshUI();
+    return;
+  }
+
+  if (
+    cloudMode !== "ready" ||
+    !cloudUserId
+  ) {
+    return;
+  }
+
+  busyVotes.add(trackId);
+  refreshUI();
+
+  const already =
+    cloudVotes.has(trackId);
+
+  try {
+    const result = already
+      ? await db.from("chart_votes")
+          .delete()
+          .eq("user_id", cloudUserId)
+          .eq("track_id", trackId)
+          .eq("chart_month", CURRENT_MONTH)
+
+      : await db.from("chart_votes")
+          .insert({
+            user_id: cloudUserId,
+            track_id: trackId,
+            chart_month: CURRENT_MONTH
+          });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    if (already) {
+      cloudVotes.delete(trackId);
+    } else {
+      cloudVotes.add(trackId);
+    }
+
+    const counts = await db.rpc(
+      "get_vote_counts",
+      {
+        p_month: CURRENT_MONTH
+      }
+    );
+
+    if (!counts.error) {
+      globalCounts.clear();
+
+      counts.data.forEach(row => {
+        globalCounts.set(
+          row.track_id,
+          Number(row.votes) || 0
+        );
+      });
+    }
+
+  } catch (error) {
+    console.error(
+      "Vote failed:",
+      error
+    );
+
+    setCommunityStatus(
+      "VOTE FAILED / PLEASE TRY AGAIN"
+    );
+
+  } finally {
+    busyVotes.delete(trackId);
+    refreshUI();
+  }
+}
 
 function makeVoteButton(track) {
   const button = el(
@@ -847,54 +1214,220 @@ function makeVoteButton(track) {
 
   button.type = "button";
 
-  if (selectedMonth !== CURRENT_MONTH) {
-    button.textContent = "ARCHIVE";
-    button.disabled = true;
-    button.title = "Past charts are read-only";
-    return button;
-  }
+  button.dataset.voteTrack = track.id;
 
-  const voteKey =
-    `afterhours-v2-demo-votes-${CURRENT_MONTH}`;
-
-  const stored = readLocal(voteKey, []);
-
-  const votes = new Set(
-    Array.isArray(stored) ? stored : []
+  button.addEventListener(
+    "click",
+    () => toggleVote(track.id)
   );
 
-  function update() {
-    const voted = votes.has(track.id);
-
-    button.textContent = voted
-      ? "♥ VOTED"
-      : "♡ VOTE";
-
-    button.setAttribute(
-      "aria-pressed",
-      String(voted)
-    );
-  }
-
-  update();
-
-  button.addEventListener("click", () => {
-    if (votes.has(track.id)) {
-      votes.delete(track.id);
-    } else {
-      votes.add(track.id);
-    }
-
-    saveLocal(voteKey, [...votes]);
-    update();
-  });
+  updateVoteButton(
+    button,
+    track.id
+  );
 
   return button;
 }
 
-/* ==========================================
-   TOP 3
-========================================== */
+// ========================================
+// 8. SONG REQUESTS
+// ========================================
+
+function renderRecommendations() {
+  if (!recommendationList) {
+    return;
+  }
+
+  recommendationList.replaceChildren();
+
+  const saved = cloudMode === "ready"
+    ? myRequests
+    : cloudMode === "demo"
+      ? readLocal(REC_KEY, [])
+      : [];
+
+  const items = Array.isArray(saved)
+    ? saved
+    : [];
+
+  items.slice(0, 5).forEach(item => {
+    if (
+      typeof item.song === "string" &&
+      typeof item.artist === "string"
+    ) {
+      recommendationList.append(
+        el(
+          "li",
+          "",
+          `${
+            item.song.slice(0, 100)
+          } — ${
+            item.artist.slice(0, 80)
+          }`
+        )
+      );
+    }
+  });
+}
+
+function formMessage(message) {
+  const node = document.querySelector(
+    "#form-message"
+  );
+
+  if (node) {
+    node.textContent = message;
+  }
+}
+
+function initRecommendations() {
+  recommendationForm =
+    document.querySelector(
+      "#recommend-form"
+    );
+
+  recommendationList =
+    document.querySelector(
+      "#recommend-list"
+    );
+
+  if (
+    !recommendationForm ||
+    !recommendationList
+  ) {
+    return;
+  }
+
+  recommendationForm.addEventListener(
+    "submit",
+    async event => {
+      event.preventDefault();
+
+      const artist =
+        recommendationForm.elements.artist
+          ?.value.trim().slice(0, 80);
+
+      const song =
+        recommendationForm.elements.song
+          ?.value.trim().slice(0, 100);
+
+      if (!artist || !song) {
+        return;
+      }
+
+      if (cloudMode === "connecting") {
+        formMessage(
+          "接続中です。もう一度お試しください。"
+        );
+        return;
+      }
+
+      if (cloudMode === "error") {
+        formMessage(
+          "現在データベースに接続できません。"
+        );
+        return;
+      }
+
+      const submitButton =
+        recommendationForm.querySelector(
+          '[type="submit"]'
+        );
+
+      if (submitButton) {
+        submitButton.disabled = true;
+      }
+
+      try {
+        if (cloudMode === "ready") {
+          const result = await db
+            .from("song_requests")
+            .insert({
+              user_id: cloudUserId,
+              title: song,
+              artist
+            });
+
+          if (result.error) {
+            if (
+              result.error.code === "23505"
+            ) {
+              formMessage(
+                "リクエストは1日1曲までです。"
+              );
+              return;
+            }
+
+            throw result.error;
+          }
+
+          myRequests.unshift({
+            song,
+            artist
+          });
+
+          myRequests =
+            myRequests.slice(0, 5);
+
+          formMessage(
+            "オンラインに保存しました（自分の履歴に表示）。"
+          );
+
+        } else {
+          const old = readLocal(
+            REC_KEY,
+            []
+          );
+
+          const next = [
+            {
+              song,
+              artist
+            },
+            ...(
+              Array.isArray(old)
+                ? old
+                : []
+            )
+          ].slice(0, 10);
+
+          saveLocal(
+            REC_KEY,
+            next
+          );
+
+          formMessage(
+            "この端末のみに保存しました（デモ）。"
+          );
+        }
+
+        recommendationForm.reset();
+        renderRecommendations();
+
+      } catch (error) {
+        console.error(
+          "Request failed:",
+          error
+        );
+
+        formMessage(
+          "送信に失敗しました。もう一度お試しください。"
+        );
+
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+        }
+      }
+    }
+  );
+
+  renderRecommendations();
+}
+
+// ========================================
+// 9. TOP THREE
+// ========================================
 
 function makePodiumCard(track, index) {
   const card = el(
@@ -926,9 +1459,9 @@ function makePodiumCard(track, index) {
   return card;
 }
 
-/* ==========================================
-   CHART ROW
-========================================== */
+// ========================================
+// 10. RANKING ROW
+// ========================================
 
 function makeRow(track, index) {
   const row = el(
@@ -992,9 +1525,9 @@ function makeRow(track, index) {
   return row;
 }
 
-/* ==========================================
-   RENDER CHART
-========================================== */
+// ========================================
+// 11. RENDER CHART
+// ========================================
 
 function renderChart() {
   const podium = document.querySelector(
@@ -1015,18 +1548,17 @@ function renderChart() {
     "#chart-search"
   );
 
-  const query = search
-    ? search.value.trim().toLowerCase()
-    : "";
+  const query = (
+    search?.value || ""
+  ).trim().toLowerCase();
 
   podium.replaceChildren();
   board.replaceChildren();
 
-  const hasArchive =
-    selectedMonth === CURRENT_MONTH ||
-    getHistory(selectedMonth, genre) !== null;
-
-  if (!hasArchive) {
+  if (
+    selectedMonth !== CURRENT_MONTH &&
+    !getHistory(selectedMonth, genre)
+  ) {
     board.append(
       el(
         "li",
@@ -1042,11 +1574,16 @@ function renderChart() {
 
   tracks.slice(0, 3).forEach(
     (track, index) => {
-      const target =
-        `${track.title} ${track.artist}`
-          .toLowerCase();
+      const target = `${
+        track.title
+      } ${
+        track.artist
+      }`.toLowerCase();
 
-      if (!query || target.includes(query)) {
+      if (
+        !query ||
+        target.includes(query)
+      ) {
         podium.append(
           makePodiumCard(track, index)
         );
@@ -1064,9 +1601,11 @@ function renderChart() {
         continue;
       }
 
-      const target =
-        `${track.title} ${track.artist}`
-          .toLowerCase();
+      const target = `${
+        track.title
+      } ${
+        track.artist
+      }`.toLowerCase();
 
       if (!target.includes(query)) {
         continue;
@@ -1082,28 +1621,33 @@ function renderChart() {
     }
   }
 
-  const results = document.querySelector(
-    "#chart-results"
-  );
+  const results =
+    document.querySelector(
+      "#chart-results"
+    );
 
   if (results) {
     results.textContent = query
       ? `${shown} DEMO TRACKS FOUND`
-      : `50 SLOTS / ${tracks.length} DEMO TRACKS`;
+      : `50 SLOTS / ${
+          tracks.length
+        } DEMO TRACKS`;
   }
 
-  const empty = document.querySelector(
-    "#chart-empty"
-  );
+  const empty =
+    document.querySelector(
+      "#chart-empty"
+    );
 
   if (empty) {
-    empty.hidden = shown !== 0 || !query;
+    empty.hidden =
+      !query || shown !== 0;
   }
 }
 
-/* ==========================================
-   HOME PAGE
-========================================== */
+// ========================================
+// 12. HOME PAGE
+// ========================================
 
 function renderHome() {
   const list = document.querySelector(
@@ -1151,7 +1695,10 @@ function renderHome() {
         el(
           "span",
           "",
-          `DEMO / ${String(index + 1).padStart(2, "0")}`
+          `DEMO / ${
+            String(index + 1)
+              .padStart(2, "0")
+          }`
         )
       );
 
@@ -1173,7 +1720,6 @@ function renderHome() {
         : "RnB.html";
 
       card.append(link);
-
       list.append(card);
     }
   );
@@ -1181,125 +1727,52 @@ function renderHome() {
   initRecommendations();
 }
 
-/* ==========================================
-   RECOMMENDATIONS
-========================================== */
-
-function initRecommendations() {
-  const form = document.querySelector(
-    "#recommend-form"
-  );
-
-  const list = document.querySelector(
-    "#recommend-list"
-  );
-
-  if (!form || !list) {
-    return;
-  }
-
-  const stored = readLocal(
-    REC_KEY,
-    []
-  );
-
-  let recommendations = Array.isArray(stored)
-    ? stored
-    : [];
-
-  function render() {
-    list.replaceChildren();
-
-    recommendations
-      .slice(0, 5)
-      .forEach(item => {
-        if (
-          typeof item.song === "string" &&
-          typeof item.artist === "string"
-        ) {
-          list.append(
-            el(
-              "li",
-              "",
-              `${item.song.slice(0, 100)} — ${item.artist.slice(0, 80)}`
-            )
-          );
-        }
-      });
-  }
-
-  form.addEventListener(
-    "submit",
-    event => {
-      event.preventDefault();
-
-      const artist = form.elements.artist
-        .value.trim().slice(0, 80);
-
-      const song = form.elements.song
-        .value.trim().slice(0, 100);
-
-      if (!artist || !song) {
-        return;
-      }
-
-      recommendations.unshift({
-        artist,
-        song
-      });
-
-      recommendations =
-        recommendations.slice(0, 10);
-
-      const saved = saveLocal(
-        REC_KEY,
-        recommendations
-      );
-
-      form.reset();
-      render();
-
-      const message = document.querySelector(
-        "#form-message"
-      );
-
-      if (message) {
-        message.textContent = saved
-          ? "SAVED ON THIS DEVICE ONLY"
-          : "LOCAL STORAGE IS UNAVAILABLE";
-      }
-    }
-  );
-
-  render();
-}
-
-/* ==========================================
-   NAVIGATION
-========================================== */
+// ========================================
+// 13. NAVIGATION
+// ========================================
 
 function initMenu() {
-  const button = document.querySelector(
-    ".mobile-menu"
-  );
+  const button =
+    document.querySelector(
+      ".mobile-menu"
+    );
 
-  const nav = document.querySelector(
-    ".nav"
-  );
+  const nav =
+    document.querySelector(
+      ".nav"
+    );
 
+  // Fix R&B filename capitalization
   document
-    .querySelectorAll('a[href="rnb.html"]')
+    .querySelectorAll("a[href]")
     .forEach(link => {
-      link.href = "RnB.html";
+      const raw = link.getAttribute(
+        "href"
+      );
+
+      if (
+        /^rnb\.html(?:[?#].*)?$/i.test(
+          raw || ""
+        )
+      ) {
+        link.setAttribute(
+          "href",
+          raw.replace(
+            /^rnb\.html/i,
+            "RnB.html"
+          )
+        );
+      }
     });
 
   if (button && nav) {
     button.addEventListener(
       "click",
       () => {
-        const opened = nav.classList.toggle(
-          "is-open"
-        );
+        const opened =
+          nav.classList.toggle(
+            "is-open"
+          );
 
         button.setAttribute(
           "aria-expanded",
@@ -1330,9 +1803,9 @@ function initMenu() {
   updateMonthDisplay();
 }
 
-/* ==========================================
-   START AFTERHOURS
-========================================== */
+// ========================================
+// 14. APPLICATION START
+// ========================================
 
 saveCurrentHistory();
 
@@ -1345,16 +1818,15 @@ if (page === "home") {
 if (page === "chart") {
   initMonthSelector();
 
-  const search = document.querySelector(
-    "#chart-search"
-  );
-
-  if (search) {
-    search.addEventListener(
+  document
+    .querySelector("#chart-search")
+    ?.addEventListener(
       "input",
       renderChart
     );
-  }
 
   renderChart();
 }
+
+// Start Supabase connection
+initCloud();
