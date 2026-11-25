@@ -2,87 +2,70 @@
 "use strict";
 
 /*
-  AFTERHOURS STEP 22
-  GLOBAL COMMUNITY CHART
-
-  Features:
-  - HIP-HOP / R&B rankings
-  - Monthly vote totals
-  - Supabase authentication
-  - Automatic refresh every 30 seconds
-  - Refresh on tab return
-  - Manual refresh
-  - No unnecessary visual rerender
-  - Safe error handling
-
-  Existing charts and voting system
-  remain unchanged.
-*/
+ * AFTERHOURS - STEP 23
+ * GLOBAL COMMUNITY CHART
+ *
+ * - Supabase vote rankings
+ * - Previous-month rank comparison
+ * - UP / DOWN / SAME / NEW indicators
+ * - 30-second automatic updates
+ * - Refresh when returning to the tab
+ * - HIP-HOP and R&B switching
+ * - Album artwork cache
+ *
+ * Existing voting functionality is untouched.
+ */
 
 (() => {
-  // ========================================
-  // SETTINGS
-  // ========================================
-
   const REFRESH_INTERVAL = 30_000;
 
   const CONFIG = window.AFTERHOURS_SUPABASE;
   const DATA = window.AFTERHOURS_DATA || {};
 
-  // ========================================
-  // HTML ELEMENTS
-  // ========================================
+  const elements = {
+    list: document.querySelector("#community-list"),
+    status: document.querySelector("#status"),
+    empty: document.querySelector("#empty-message"),
+    month: document.querySelector("#chart-month"),
+    hiphop: document.querySelector("#tab-hiphop"),
+    rnb: document.querySelector("#tab-rnb"),
+    refresh: document.querySelector("#refresh-chart")
+  };
 
-  const list = document.querySelector(
-    "#community-list"
-  );
+  const state = {
+    db: null,
+    ready: false,
+    genre: "hiphop",
+    artwork: {},
+    requestId: 0,
+    loading: false,
+    timer: null,
+    lastUpdated: 0,
+    signature: null,
+    loaded: false,
+    currentMonth: ""
+  };
 
-  const status = document.querySelector(
-    "#status"
-  );
+  // ------------------------------------------
+  // SAFETY CHECK
+  // ------------------------------------------
 
-  const empty = document.querySelector(
-    "#empty-message"
-  );
+  function requiredElementsExist() {
+    return Object.values(elements).every(Boolean);
+  }
 
-  const monthSelect = document.querySelector(
-    "#chart-month"
-  );
+  if (!requiredElementsExist()) {
+    console.error(
+      "[AFTERHOURS] Community HTML elements missing."
+    );
+    return;
+  }
 
-  const hiphopTab = document.querySelector(
-    "#tab-hiphop"
-  );
-
-  const rnbTab = document.querySelector(
-    "#tab-rnb"
-  );
-
-  const refreshButton = document.querySelector(
-    "#refresh-chart"
-  );
-
-  // ========================================
-  // APPLICATION STATE
-  // ========================================
-
-  let db = null;
-  let genre = "hiphop";
-  let artworkMap = {};
-
-  let isReady = false;
-  let requestNumber = 0;
-
-  let refreshTimer = null;
-  let lastRenderSignature = null;
-
-  let lastSuccessfulUpdate = 0;
-  let hasLoadedRanking = false;
-
-  // ========================================
+  // ------------------------------------------
   // DATE FUNCTIONS
-  // ========================================
+  // ------------------------------------------
 
-  function currentMonthJapan() {
+  function getJapanMonth() {
     const parts = new Intl.DateTimeFormat(
       "en-US",
       {
@@ -93,29 +76,33 @@
     ).formatToParts(new Date());
 
     const year = parts.find(
-      part => part.type === "year"
-    ).value;
+      item => item.type === "year"
+    )?.value;
 
     const month = parts.find(
-      part => part.type === "month"
-    ).value;
+      item => item.type === "month"
+    )?.value;
 
     return `${year}-${month}`;
   }
 
-  function monthBefore(value, amount) {
+  function shiftMonth(value, monthsBack) {
     const [year, month] = value
       .split("-")
       .map(Number);
 
     const date = new Date(
-      Date.UTC(year, month - 1 - amount, 1)
+      Date.UTC(
+        year,
+        month - 1 - monthsBack,
+        1
+      )
     );
 
     return date.toISOString().slice(0, 7);
   }
 
-  function monthLabel(value) {
+  function formatMonth(value) {
     const [year, month] = value
       .split("-")
       .map(Number);
@@ -127,14 +114,14 @@
     return new Intl.DateTimeFormat(
       "en-US",
       {
-        month: "long",
         year: "numeric",
+        month: "long",
         timeZone: "UTC"
       }
     ).format(date).toUpperCase();
   }
 
-  function japanTimeLabel() {
+  function japanTime() {
     return new Intl.DateTimeFormat(
       "en-GB",
       {
@@ -147,51 +134,74 @@
     ).format(new Date());
   }
 
-  function initializeMonths() {
-    const current = currentMonthJapan();
+  function populateMonths(selectedMonth) {
+    const latest = getJapanMonth();
 
-    monthSelect.replaceChildren();
+    elements.month.replaceChildren();
 
     for (let i = 0; i < 12; i++) {
-      const value = monthBefore(
-        current,
-        i
-      );
+      const value = shiftMonth(latest, i);
 
       const option = document.createElement(
         "option"
       );
 
       option.value = value;
-      option.textContent = monthLabel(value);
+      option.textContent = formatMonth(value);
 
-      monthSelect.append(option);
+      elements.month.append(option);
     }
 
-    monthSelect.value = current;
+    const isAvailable = Array.from(
+      elements.month.options
+    ).some(option => option.value === selectedMonth);
+
+    elements.month.value = isAvailable
+      ? selectedMonth
+      : latest;
+
+    state.currentMonth = latest;
   }
 
-  // ========================================
-  // UTILITIES
-  // ========================================
+  function checkMonthRollover() {
+    const latest = getJapanMonth();
+
+    if (latest === state.currentMonth) {
+      return;
+    }
+
+    const wasViewingCurrent =
+      elements.month.value === state.currentMonth;
+
+    const selected = wasViewingCurrent
+      ? latest
+      : elements.month.value;
+
+    populateMonths(selected);
+
+    state.signature = null;
+  }
+
+  // ------------------------------------------
+  // BASIC HELPERS
+  // ------------------------------------------
 
   function setStatus(message, error = false) {
-    status.textContent = message;
+    elements.status.textContent = message;
 
-    status.classList.toggle(
+    elements.status.classList.toggle(
       "error",
       error
     );
   }
 
-  function safeUrl(value) {
+  function safeHttpsUrl(value) {
     try {
-      const parsed = new URL(value);
+      const url = new URL(value);
 
-      return parsed.protocol === "https:"
-        ? parsed.href
+      return url.protocol === "https:"
+        ? url.href
         : null;
-
     } catch {
       return null;
     }
@@ -205,253 +215,257 @@
   }
 
   function getTracks() {
-    const tracks = DATA[genre];
+    const tracks = DATA[state.genre];
 
     return Array.isArray(tracks)
       ? tracks.slice(0, 50)
       : [];
   }
 
-  // ========================================
-  // GENRE TABS
-  // ========================================
+  // ------------------------------------------
+  // EXTRA STYLES
+  // ------------------------------------------
 
-  function updateTabs() {
-    const isHiphop = genre === "hiphop";
+  function installMovementStyles() {
+    if (
+      document.getElementById(
+        "afterhours-movement-styles"
+      )
+    ) {
+      return;
+    }
 
-    hiphopTab.classList.toggle(
+    const css = document.createElement("style");
+
+    css.id = "afterhours-movement-styles";
+
+    css.textContent = `
+      .ah-track-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 9px;
+      }
+
+      .ah-movement {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 9px;
+        border-radius: 6px;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        white-space: nowrap;
+      }
+
+      .ah-movement.up {
+        color: #45f5c0;
+        background: rgba(69, 245, 192, 0.10);
+        border: 1px solid rgba(69, 245, 192, 0.24);
+      }
+
+      .ah-movement.down {
+        color: #ff8d9b;
+        background: rgba(255, 141, 155, 0.10);
+        border: 1px solid rgba(255, 141, 155, 0.24);
+      }
+
+      .ah-movement.same {
+        color: #a5b3cc;
+        background: rgba(165, 179, 204, 0.08);
+        border: 1px solid rgba(165, 179, 204, 0.18);
+      }
+
+      .ah-movement.new {
+        color: #f3bafa;
+        background: rgba(243, 186, 250, 0.10);
+        border: 1px solid rgba(243, 186, 250, 0.24);
+      }
+
+      .ah-comparison {
+        margin: 0 0 18px;
+        color: #98a6bd;
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .ah-comparison strong {
+        color: #40e5ed;
+      }
+    `;
+
+    document.head.append(css);
+  }
+
+  function ensureComparisonInfo() {
+    let info = document.getElementById(
+      "ah-comparison-info"
+    );
+
+    if (info) {
+      return info;
+    }
+
+    info = document.createElement("p");
+    info.id = "ah-comparison-info";
+    info.className = "ah-comparison";
+    info.setAttribute("aria-live", "polite");
+
+    const heading = document.querySelector(
+      ".board-heading"
+    );
+
+    if (heading) {
+      heading.insertAdjacentElement(
+        "afterend",
+        info
+      );
+    }
+
+    return info;
+  }
+
+  function setComparisonInfo(message) {
+    const info = ensureComparisonInfo();
+
+    info.textContent = message;
+  }
+
+  // ------------------------------------------
+  // GENRE CONTROLS
+  // ------------------------------------------
+
+  function updateGenreButtons() {
+    const isHipHop = state.genre === "hiphop";
+
+    elements.hiphop.classList.toggle(
       "active",
-      isHiphop
+      isHipHop
     );
 
-    rnbTab.classList.toggle(
+    elements.rnb.classList.toggle(
       "active",
-      !isHiphop
+      !isHipHop
     );
 
-    hiphopTab.setAttribute(
+    elements.hiphop.setAttribute(
       "aria-pressed",
-      String(isHiphop)
+      String(isHipHop)
     );
 
-    rnbTab.setAttribute(
+    elements.rnb.setAttribute(
       "aria-pressed",
-      String(!isHiphop)
+      String(!isHipHop)
     );
   }
 
-  // ========================================
-  // ARTWORK CACHE
-  // ========================================
+  // ------------------------------------------
+  // ARTWORK
+  // ------------------------------------------
 
   async function loadArtworkMap() {
     try {
       const response = await fetch(
         "images/artwork-map.json",
-        {
-          cache: "no-cache"
-        }
+        { cache: "no-cache" }
       );
 
       if (!response.ok) {
         return;
       }
 
-      const result = await response.json();
+      const map = await response.json();
 
       if (
-        result &&
-        typeof result === "object" &&
-        !Array.isArray(result)
+        map &&
+        typeof map === "object" &&
+        !Array.isArray(map)
       ) {
-        artworkMap = result;
+        state.artwork = map;
       }
-
     } catch (error) {
       console.warn(
-        "Artwork cache unavailable:",
+        "[AFTERHOURS] Artwork unavailable",
         error
       );
     }
   }
 
   function createArtwork(track) {
-    const box = document.createElement(
+    const container = document.createElement(
       "div"
     );
 
-    box.className = "artwork";
+    container.className = "artwork";
 
-    box.textContent = String(
+    container.textContent = String(
       track.title || "?"
     ).charAt(0).toUpperCase();
 
-    const saved = artworkMap[track.id];
+    const saved = state.artwork[track.id];
 
     if (!saved) {
-      return box;
+      return container;
     }
 
-    // Check artwork belongs to the song.
     if (
       normalize(saved.title) !==
         normalize(track.title) ||
       normalize(saved.artist) !==
         normalize(track.artist)
     ) {
-      return box;
+      return container;
     }
 
-    const imageUrl = safeUrl(saved.image);
+    const url = safeHttpsUrl(saved.image);
 
-    if (!imageUrl) {
-      return box;
+    if (!url) {
+      return container;
     }
 
     const image = document.createElement(
       "img"
     );
 
-    image.alt = `${track.title} album artwork`;
+    image.alt = `${track.title} artwork`;
     image.loading = "lazy";
     image.decoding = "async";
 
     image.onload = () => {
-      if (box.isConnected) {
-        box.replaceChildren(image);
+      if (container.isConnected) {
+        container.replaceChildren(image);
       }
     };
 
-    image.src = imageUrl;
+    image.src = url;
 
-    return box;
+    return container;
   }
 
-  // ========================================
-  // CREATE RANKING ROW
-  // ========================================
+  // ------------------------------------------
+  // VOTE DATA
+  // ------------------------------------------
 
-  function createRow(track, votes, rank) {
-    const row = document.createElement(
-      "li"
+  async function fetchVotes(month) {
+    const { data, error } = await state.db.rpc(
+      "get_vote_counts",
+      { p_month: month }
     );
 
-    row.className = "chart-row";
-
-    const number = document.createElement(
-      "span"
-    );
-
-    number.className = "rank";
-
-    number.textContent = String(
-      rank
-    ).padStart(2, "0");
-
-    const info = document.createElement(
-      "div"
-    );
-
-    info.className = "song-info";
-
-    const title = document.createElement(
-      "h3"
-    );
-
-    title.textContent = track.title;
-
-    const artist = document.createElement(
-      "p"
-    );
-
-    artist.textContent = track.artist;
-
-    info.append(title, artist);
-
-    const count = document.createElement(
-      "div"
-    );
-
-    count.className = "votes";
-
-    const amount = document.createElement(
-      "span"
-    );
-
-    amount.textContent =
-      votes.toLocaleString("en-US");
-
-    const label = document.createElement(
-      "small"
-    );
-
-    label.textContent = "VOTES";
-
-    count.append(amount, label);
-
-    row.append(
-      number,
-      createArtwork(track),
-      info,
-      count
-    );
-
-    return row;
-  }
-
-  // ========================================
-  // RENDER RANKING
-  // ========================================
-
-  function renderRanking(rows) {
-    const signature = JSON.stringify({
-      genre,
-      month: monthSelect.value,
-      rows: rows.map(item => [
-        item.track.id,
-        item.votes
-      ])
-    });
-
-    // Avoid unnecessary DOM and artwork reloads
-    // when the ranking has not changed.
-    if (
-      signature === lastRenderSignature &&
-      hasLoadedRanking
-    ) {
-      return;
+    if (error) {
+      throw error;
     }
 
-    lastRenderSignature = signature;
-
-    const fragment =
-      document.createDocumentFragment();
-
-    rows.forEach((item, index) => {
-      fragment.append(
-        createRow(
-          item.track,
-          item.votes,
-          index + 1
-        )
-      );
-    });
-
-    list.replaceChildren(fragment);
-
-    empty.hidden = rows.length !== 0;
-
-    hasLoadedRanking = true;
+    return Array.isArray(data) ? data : [];
   }
 
-  // ========================================
-  // VOTE DATA PROCESSING
-  // ========================================
-
-  function createRanking(voteData) {
+  function voteMap(rows) {
     const totals = new Map();
 
-    for (const item of voteData || []) {
+    for (const item of rows) {
       const votes = Number(item.votes);
 
       if (
@@ -459,14 +473,15 @@
         Number.isSafeInteger(votes) &&
         votes > 0
       ) {
-        totals.set(
-          item.track_id,
-          votes
-        );
+        totals.set(item.track_id, votes);
       }
     }
 
-    return getTracks()
+    return totals;
+  }
+
+  function rankTracks(tracks, totals) {
+    return tracks
       .map(track => ({
         track,
         votes: totals.get(track.id) || 0
@@ -481,21 +496,233 @@
           b.track.id
         );
       })
-      .slice(0, 50);
+      .slice(0, 50)
+      .map((item, index) => ({
+        ...item,
+        rank: index + 1
+      }));
   }
 
-  // ========================================
-  // LOAD RANKING FROM SUPABASE
-  // ========================================
+  // ------------------------------------------
+  // MONTHLY MOVEMENT
+  // ------------------------------------------
+
+  function calculateMovement(
+    currentRanking,
+    previousRanking,
+    hasPreviousChart
+  ) {
+    if (!hasPreviousChart) {
+      return currentRanking.map(item => ({
+        ...item,
+        movement: null
+      }));
+    }
+
+    const previousPositions = new Map();
+
+    for (const item of previousRanking) {
+      previousPositions.set(
+        item.track.id,
+        item.rank
+      );
+    }
+
+    return currentRanking.map(item => {
+      const previousRank = previousPositions.get(
+        item.track.id
+      );
+
+      if (previousRank === undefined) {
+        return {
+          ...item,
+          movement: {
+            type: "new",
+            label: "NEW"
+          }
+        };
+      }
+
+      const difference = previousRank - item.rank;
+
+      if (difference > 0) {
+        return {
+          ...item,
+          movement: {
+            type: "up",
+            label: `↑ UP ${difference}`
+          }
+        };
+      }
+
+      if (difference < 0) {
+        return {
+          ...item,
+          movement: {
+            type: "down",
+            label: `↓ DOWN ${Math.abs(difference)}`
+          }
+        };
+      }
+
+      return {
+        ...item,
+        movement: {
+          type: "same",
+          label: "— SAME"
+        }
+      };
+    });
+  }
+
+  // ------------------------------------------
+  // CREATE CHART ROW
+  // ------------------------------------------
+
+  function createMovementBadge(movement) {
+    const badge = document.createElement(
+      "span"
+    );
+
+    badge.className =
+      `ah-movement ${movement.type}`;
+
+    badge.textContent = movement.label;
+
+    return badge;
+  }
+
+  function createRow(item) {
+    const row = document.createElement(
+      "li"
+    );
+
+    row.className = "chart-row";
+
+    const rank = document.createElement(
+      "span"
+    );
+
+    rank.className = "rank";
+
+    rank.textContent = String(
+      item.rank
+    ).padStart(2, "0");
+
+    const info = document.createElement(
+      "div"
+    );
+
+    info.className = "song-info";
+
+    const title = document.createElement(
+      "h3"
+    );
+
+    title.textContent = item.track.title;
+
+    const artist = document.createElement(
+      "p"
+    );
+
+    artist.textContent = item.track.artist;
+
+    info.append(title, artist);
+
+    if (item.movement) {
+      const meta = document.createElement(
+        "div"
+      );
+
+      meta.className = "ah-track-meta";
+
+      meta.append(
+        createMovementBadge(item.movement)
+      );
+
+      info.append(meta);
+    }
+
+    const count = document.createElement(
+      "div"
+    );
+
+    count.className = "votes";
+
+    const number = document.createElement(
+      "span"
+    );
+
+    number.textContent =
+      item.votes.toLocaleString("en-US");
+
+    const label = document.createElement(
+      "small"
+    );
+
+    label.textContent = "VOTES";
+
+    count.append(number, label);
+
+    row.append(
+      rank,
+      createArtwork(item.track),
+      info,
+      count
+    );
+
+    return row;
+  }
+
+  // ------------------------------------------
+  // RENDER RANKING
+  // ------------------------------------------
+
+  function renderRanking(rows) {
+    const signature = JSON.stringify({
+      genre: state.genre,
+      month: elements.month.value,
+      tracks: rows.map(item => [
+        item.track.id,
+        item.rank,
+        item.votes,
+        item.movement?.label || ""
+      ])
+    });
+
+    if (
+      state.loaded &&
+      signature === state.signature
+    ) {
+      return;
+    }
+
+    const fragment =
+      document.createDocumentFragment();
+
+    for (const item of rows) {
+      fragment.append(createRow(item));
+    }
+
+    elements.list.replaceChildren(fragment);
+
+    elements.empty.hidden = rows.length > 0;
+
+    state.signature = signature;
+    state.loaded = true;
+  }
+
+  // ------------------------------------------
+  // LOAD BOTH MONTHS
+  // ------------------------------------------
 
   async function loadRanking(
     reason = "manual"
   ) {
-    if (!isReady || !db) {
+    if (!state.ready || !state.db) {
       return;
     }
 
-    // Do not automatically query a hidden tab.
     if (
       reason === "auto" &&
       document.hidden
@@ -503,80 +730,150 @@
       return;
     }
 
-    const thisRequest = ++requestNumber;
-    const selectedMonth = monthSelect.value;
-
-    if (reason === "auto") {
-      setStatus("SYNCING VOTES...");
-    } else {
-      setStatus("LOADING VOTES...");
+    if (
+      reason === "auto" &&
+      state.loading
+    ) {
+      return;
     }
 
-    refreshButton.disabled = true;
+    checkMonthRollover();
+
+    const requestId = ++state.requestId;
+
+    const selectedMonth = elements.month.value;
+    const previousMonth = shiftMonth(
+      selectedMonth,
+      1
+    );
+
+    const selectedGenre = state.genre;
+
+    state.loading = true;
+    elements.refresh.disabled = true;
+
+    if (!state.loaded) {
+      setStatus("LOADING VOTES...");
+    } else {
+      setStatus("SYNCING VOTES...");
+    }
 
     try {
-      const { data, error } = await db.rpc(
-        "get_vote_counts",
-        {
-          p_month: selectedMonth
-        }
-      );
+      // The current month is required.
+      // The previous month is optional:
+      // current chart still works if comparison fails.
+      const [currentRows, previousResult] =
+        await Promise.all([
+          fetchVotes(selectedMonth),
+          fetchVotes(previousMonth)
+            .then(rows => ({
+              success: true,
+              rows
+            }))
+            .catch(error => ({
+              success: false,
+              error,
+              rows: []
+            }))
+        ]);
 
-      if (error) {
-        throw error;
-      }
-
-      // Another request has started.
-      // Ignore outdated response.
-      if (thisRequest !== requestNumber) {
+      if (requestId !== state.requestId) {
         return;
       }
 
-      const ranked = createRanking(data);
+      if (selectedGenre !== state.genre) {
+        return;
+      }
 
-      renderRanking(ranked);
+      const tracks = getTracks();
 
-      lastSuccessfulUpdate = Date.now();
+      const currentRanking = rankTracks(
+        tracks,
+        voteMap(currentRows)
+      );
 
-      const time = japanTimeLabel();
+      let displayRows = currentRanking;
+
+      if (previousResult.success) {
+        const previousRanking = rankTracks(
+          tracks,
+          voteMap(previousResult.rows)
+        );
+
+        // No previous votes means no usable
+        // reference ranking for this genre.
+        const hasPreviousChart =
+          previousRanking.length > 0;
+
+        displayRows = calculateMovement(
+          currentRanking,
+          previousRanking,
+          hasPreviousChart
+        );
+
+        if (hasPreviousChart) {
+          setComparisonInfo(
+            `MONTHLY MOVEMENT: ` +
+            `${formatMonth(previousMonth)} → ` +
+            `${formatMonth(selectedMonth)}`
+          );
+        } else {
+          setComparisonInfo(
+            "MONTHLY MOVEMENT: " +
+            "No previous-month votes for this genre."
+          );
+        }
+
+      } else {
+        console.warn(
+          "[AFTERHOURS] Previous month unavailable:",
+          previousResult.error
+        );
+
+        setComparisonInfo(
+          "MONTHLY MOVEMENT: " +
+          "Previous-month comparison unavailable."
+        );
+      }
+
+      renderRanking(displayRows);
+
+      state.lastUpdated = Date.now();
 
       setStatus(
-        `● LIVE / ${ranked.length} TRACKS` +
-        ` / ${time} JST`
+        `● LIVE / ${displayRows.length} TRACKS` +
+        ` / ${japanTime()} JST`
       );
 
       console.info(
-        "[AFTERHOURS] Community chart updated",
+        "[AFTERHOURS] Chart synced",
         {
-          reason,
-          genre,
+          genre: state.genre,
           month: selectedMonth,
-          tracks: ranked.length,
-          updatedAt: time
+          previousMonth,
+          reason,
+          tracks: displayRows.length
         }
       );
 
     } catch (error) {
-      if (thisRequest !== requestNumber) {
+      if (requestId !== state.requestId) {
         return;
       }
 
       console.error(
-        "[AFTERHOURS] Ranking sync failed:",
+        "[AFTERHOURS] Chart sync failed:",
         error
       );
 
-      // Preserve the existing ranking on failure.
-      // Next automatic update will retry.
-      if (hasLoadedRanking) {
+      if (state.loaded) {
         setStatus(
           "SYNC FAILED / RETRYING",
           true
         );
       } else {
-        list.replaceChildren();
-
-        empty.hidden = true;
+        elements.list.replaceChildren();
+        elements.empty.hidden = true;
 
         setStatus(
           "DATABASE ERROR / PLEASE RETRY",
@@ -585,34 +882,35 @@
       }
 
     } finally {
-      if (thisRequest === requestNumber) {
-        refreshButton.disabled = false;
+      if (requestId === state.requestId) {
+        state.loading = false;
+        elements.refresh.disabled = false;
       }
     }
   }
 
-  // ========================================
-  // SUPABASE CONNECTION
-  // ========================================
+  // ------------------------------------------
+  // SUPABASE LOGIN
+  // ------------------------------------------
 
   async function connectSupabase() {
     if (
       !CONFIG ||
-      !safeUrl(CONFIG.url) ||
+      !safeHttpsUrl(CONFIG.url) ||
       !CONFIG.publishableKey
     ) {
       throw new Error(
-        "Supabase configuration is missing."
+        "Supabase configuration missing."
       );
     }
 
     if (!window.supabase?.createClient) {
       throw new Error(
-        "Supabase SDK failed to load."
+        "Supabase JavaScript SDK unavailable."
       );
     }
 
-    db = window.supabase.createClient(
+    state.db = window.supabase.createClient(
       CONFIG.url,
       CONFIG.publishableKey,
       {
@@ -623,179 +921,152 @@
       }
     );
 
-    const session = await db.auth.getSession();
+    const session =
+      await state.db.auth.getSession();
 
     if (session.error) {
       throw session.error;
     }
 
-    // Reuse voting-page session.
-    // Create an anonymous user only if needed.
     if (!session.data.session) {
-      const result = await db.auth
-        .signInAnonymously();
+      const result =
+        await state.db.auth.signInAnonymously();
 
       if (result.error) {
         throw result.error;
       }
     }
 
-    const user = await db.auth.getUser();
+    const user = await state.db.auth.getUser();
 
     if (user.error || !user.data.user) {
       throw user.error ||
         new Error("Authentication failed.");
     }
 
-    isReady = true;
+    state.ready = true;
   }
 
-  // ========================================
-  // AUTOMATIC UPDATES
-  // ========================================
+  // ------------------------------------------
+  // TIMER
+  // ------------------------------------------
 
   function startAutoRefresh() {
-    // Prevent multiple timers.
-    if (refreshTimer !== null) {
-      clearInterval(refreshTimer);
-    }
+    stopAutoRefresh();
 
-    refreshTimer = setInterval(() => {
+    state.timer = window.setInterval(() => {
       if (
-        !isReady ||
-        document.hidden
+        !state.ready ||
+        document.hidden ||
+        state.loading
       ) {
-        return;
-      }
-
-      // Skip this cycle while a request
-      // is already running.
-      if (refreshButton.disabled) {
         return;
       }
 
       loadRanking("auto");
-
     }, REFRESH_INTERVAL);
-
-    console.info(
-      "[AFTERHOURS] Auto refresh enabled:",
-      REFRESH_INTERVAL / 1000,
-      "seconds"
-    );
   }
 
   function stopAutoRefresh() {
-    if (refreshTimer !== null) {
-      clearInterval(refreshTimer);
-      refreshTimer = null;
+    if (state.timer !== null) {
+      clearInterval(state.timer);
+      state.timer = null;
     }
   }
 
-  // ========================================
-  // TAB VISIBILITY
-  // ========================================
+  // ------------------------------------------
+  // CONTROLS
+  // ------------------------------------------
 
-  document.addEventListener(
-    "visibilitychange",
-    () => {
-      if (!isReady || document.hidden) {
-        return;
-      }
-
-      const elapsed = (
-        Date.now() - lastSuccessfulUpdate
-      );
-
-      // Refresh immediately when returning
-      // after at least 10 seconds.
-      if (
-        !lastSuccessfulUpdate ||
-        elapsed >= 10_000
-      ) {
-        loadRanking("return");
-      }
-    }
-  );
-
-  // ========================================
-  // USER CONTROLS
-  // ========================================
-
-  hiphopTab.addEventListener(
+  elements.hiphop.addEventListener(
     "click",
     () => {
-      if (genre === "hiphop") {
+      if (state.genre === "hiphop") {
         return;
       }
 
-      genre = "hiphop";
-
-      updateTabs();
+      state.genre = "hiphop";
+      updateGenreButtons();
       loadRanking("genre");
     }
   );
 
-  rnbTab.addEventListener(
+  elements.rnb.addEventListener(
     "click",
     () => {
-      if (genre === "rnb") {
+      if (state.genre === "rnb") {
         return;
       }
 
-      genre = "rnb";
-
-      updateTabs();
+      state.genre = "rnb";
+      updateGenreButtons();
       loadRanking("genre");
     }
   );
 
-  monthSelect.addEventListener(
+  elements.month.addEventListener(
     "change",
     () => {
       loadRanking("month");
     }
   );
 
-  refreshButton.addEventListener(
+  elements.refresh.addEventListener(
     "click",
     () => {
       loadRanking("manual");
     }
   );
 
-  // ========================================
-  // PAGE CLEANUP
-  // ========================================
-
-  window.addEventListener(
-    "pagehide",
+  document.addEventListener(
+    "visibilitychange",
     () => {
-      stopAutoRefresh();
+      if (
+        !state.ready ||
+        document.hidden
+      ) {
+        return;
+      }
+
+      if (
+        Date.now() - state.lastUpdated >= 10_000
+      ) {
+        loadRanking("return");
+      }
     }
   );
 
   window.addEventListener(
+    "pagehide",
+    stopAutoRefresh
+  );
+
+  window.addEventListener(
     "pageshow",
-    (event) => {
-      // Restore timer after back/forward
-      // cache navigation.
-      if (event.persisted && isReady) {
+    event => {
+      if (event.persisted && state.ready) {
         startAutoRefresh();
         loadRanking("return");
       }
     }
   );
 
-  // ========================================
-  // START APPLICATION
-  // ========================================
+  // ------------------------------------------
+  // INITIALIZE
+  // ------------------------------------------
 
   async function start() {
-    initializeMonths();
-    updateTabs();
+    installMovementStyles();
 
-    refreshButton.disabled = true;
+    populateMonths(getJapanMonth());
+
+    updateGenreButtons();
+
+    setComparisonInfo(
+      "Preparing previous-month comparison..."
+    );
+
+    elements.refresh.disabled = true;
 
     setStatus(
       "CONNECTING TO SUPABASE..."
@@ -813,7 +1084,7 @@
 
     } catch (error) {
       console.error(
-        "[AFTERHOURS] Startup failed:",
+        "[AFTERHOURS] Startup error:",
         error
       );
 
@@ -822,7 +1093,7 @@
         true
       );
 
-      refreshButton.disabled = false;
+      elements.refresh.disabled = false;
     }
   }
 
