@@ -1,0 +1,559 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+
+  <meta name="theme-color" content="#080b16">
+
+  <title>Community Charts | AFTERHOURS</title>
+
+  <meta name="description"
+        content="Explore community-voted HIP-HOP and R&B charts on AFTERHOURS. Rankings are based on votes from participating users.">
+
+  <link rel="icon"
+        type="image/svg+xml"
+        href="images/favicon.svg">
+
+  <link rel="preconnect"
+        href="https://fonts.googleapis.com">
+
+  <link rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b16;
+      --surface: #111729;
+      --border: #273147;
+      --white: #f4f7ff;
+      --muted: #98a6bd;
+      --cyan: #40e5ed;
+      --pink: #eb62c6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--white);
+      background:
+        radial-gradient(
+          circle at 80% 0%,
+          #222047 0,
+          transparent 35%
+        ),
+        radial-gradient(
+          circle at 0% 40%,
+          #0c3037 0,
+          transparent 35%
+        ),
+        var(--bg);
+      font-family: "DM Sans", sans-serif;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    button, select {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 36px));
+      margin: auto;
+    }
+
+    .topline {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font: 600 10px "Space Grotesk", sans-serif;
+      letter-spacing: 2px;
+    }
+
+    .header {
+      border-bottom: 1px solid var(--border);
+      background: #080b16db;
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      padding: 24px 0;
+    }
+
+    .brand {
+      text-decoration: none;
+      font: 700 25px "Space Grotesk", sans-serif;
+      letter-spacing: -1.7px;
+    }
+
+    .brand span {
+      color: var(--cyan);
+    }
+
+    .nav {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font: 700 11px "Space Grotesk", sans-serif;
+      letter-spacing: 1px;
+    }
+
+    .nav a:hover,
+    .nav .active {
+      color: var(--cyan);
+    }
+
+    .hero {
+      padding: 92px 0 54px;
+    }
+
+    .eyebrow {
+      color: var(--cyan);
+      font: 700 12px "Space Grotesk", sans-serif;
+      letter-spacing: 3px;
+    }
+
+    h1 {
+      margin: 18px 0;
+      font: 700 clamp(44px, 8vw, 100px)
+        "Space Grotesk", sans-serif;
+      letter-spacing: -5px;
+      line-height: 0.98;
+    }
+
+    h1 span {
+      color: var(--cyan);
+    }
+
+    .intro {
+      color: var(--muted);
+      max-width: 680px;
+      line-height: 1.8;
+    }
+
+    .panel {
+      margin-bottom: 36px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #111729d9;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+    }
+
+    .tab,
+    .refresh {
+      padding: 12px 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--white);
+      background: #192238;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .tab.active {
+      color: #071016;
+      background: var(--cyan);
+      border-color: var(--cyan);
+    }
+
+    .month-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .month-box label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    #chart-month {
+      padding: 12px;
+      min-width: 210px;
+      max-width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #192238;
+      color: var(--white);
+    }
+
+    .board-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    h2 {
+      margin: 0;
+      font: 700 clamp(24px, 4vw, 36px)
+        "Space Grotesk", sans-serif;
+    }
+
+    h2 span {
+      color: var(--pink);
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .error {
+      color: #ff899b;
+    }
+
+    .chart-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 60px 70px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 14px 18px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 12px;
+    }
+
+    .chart-row:nth-child(1) {
+      border-color: #cbb56e;
+    }
+
+    .chart-row:nth-child(2) {
+      border-color: #7e9cab;
+    }
+
+    .chart-row:nth-child(3) {
+      border-color: #a3777b;
+    }
+
+    .rank {
+      color: var(--cyan);
+      font: 700 23px "Space Grotesk", sans-serif;
+    }
+
+    .artwork {
+      width: 70px;
+      height: 70px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: linear-gradient(
+        135deg, #235368, #49295d
+      );
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .artwork img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .song-info {
+      min-width: 0;
+    }
+
+    .song-info h3 {
+      margin: 0 0 7px;
+      overflow-wrap: anywhere;
+      font-size: 17px;
+    }
+
+    .song-info p {
+      margin: 0;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+      font-size: 13px;
+    }
+
+    .votes {
+      text-align: right;
+      color: var(--cyan);
+      font: 700 21px "Space Grotesk", sans-serif;
+      white-space: nowrap;
+    }
+
+    .votes small {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 1px;
+    }
+
+    .notice {
+      padding: 24px;
+      margin: 28px 0 70px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 13px;
+    }
+
+    .footer {
+      padding: 26px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 650px) {
+      .header-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .nav {
+        gap: 15px;
+      }
+
+      .hero {
+        padding: 60px 0 35px;
+      }
+
+      h1 {
+        letter-spacing: -2px;
+      }
+
+      .panel {
+        padding: 16px;
+      }
+
+      .chart-row {
+        grid-template-columns: 35px 52px minmax(0, 1fr);
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .rank {
+        font-size: 16px;
+      }
+
+      .artwork {
+        width: 52px;
+        height: 52px;
+      }
+
+      .song-info h3 {
+        font-size: 14px;
+      }
+
+      .votes {
+        grid-column: 3;
+        text-align: left;
+        font-size: 15px;
+      }
+
+      .votes small {
+        display: inline;
+        margin-left: 5px;
+      }
+    }
+  </style>
+
+  <script src="js/data.js" defer></script>
+  <script src="js/supabase-config.js" defer></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    defer></script>
+  <script src="js/community.js" defer></script>
+</head>
+
+<body>
+
+  <div class="topline">
+    <div class="shell">
+      INDEPENDENT GLOBAL MUSIC INDEX /
+      COMMUNITY SYSTEM
+    </div>
+  </div>
+
+  <header class="header">
+    <div class="shell header-inner">
+
+      <a class="brand" href="index.html">
+        AFTER<span>HOURS</span>.
+      </a>
+
+      <nav class="nav" aria-label="Main navigation">
+        <a href="index.html">HOME</a>
+        <a href="hiphop.html">HIP-HOP</a>
+        <a href="RnB.html">R&B</a>
+        <a href="community.html" class="active">
+          COMMUNITY
+        </a>
+      </nav>
+
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <section class="hero">
+      <div class="eyebrow">
+        CHANNEL 003 / COMMUNITY
+      </div>
+
+      <h1>
+        GLOBAL<br>
+        <span>COMMUNITY.</span>
+      </h1>
+
+      <p class="intro">
+        The music ranking powered by community votes.
+        Explore the most-voted HIP-HOP and R&B tracks.
+        This chart is separate from our editorial demo Top 50.
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="filters">
+
+        <div class="tabs" aria-label="Music genre">
+          <button
+            id="tab-hiphop"
+            type="button"
+            class="tab active"
+            aria-pressed="true">
+            HIP-HOP
+          </button>
+
+          <button
+            id="tab-rnb"
+            type="button"
+            class="tab"
+            aria-pressed="false">
+            R&B
+          </button>
+        </div>
+
+        <div class="month-box">
+          <label for="chart-month">
+            CHART MONTH
+          </label>
+
+          <select id="chart-month"></select>
+        </div>
+
+        <button
+          class="refresh"
+          id="refresh-chart"
+          type="button">
+          ↻ REFRESH
+        </button>
+
+      </div>
+    </section>
+
+    <section aria-labelledby="board-title">
+
+      <div class="board-heading">
+        <h2 id="board-title">
+          COMMUNITY <span>TOP 50.</span>
+        </h2>
+
+        <span id="status"
+              class="status"
+              role="status"
+              aria-live="polite">
+          CONNECTING...
+        </span>
+      </div>
+
+      <ol id="community-list"
+          class="chart-list">
+      </ol>
+
+      <p id="empty-message"
+         class="notice"
+         hidden>
+        No votes have been recorded for this
+        genre and month yet.
+        Vote on the HIP-HOP or R&B chart page
+        to help build this ranking.
+      </p>
+
+    </section>
+
+    <div class="notice">
+      DATA STATUS / COMMUNITY VOTES
+
+      <p>
+        Rankings are calculated from votes stored
+        in Supabase. Only tracks with recorded votes
+        appear. They are not official Spotify,
+        Apple Music, or streaming charts.
+      </p>
+
+      <p>
+        Anonymous accounts can be recreated.
+        Anti-abuse measures are still being developed.
+        Historical totals may change if votes are
+        subsequently removed by an administrator.
+      </p>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    <div class="shell">
+      AFTERHOURS © 2026 —
+      INDEPENDENT MUSIC COMMUNITY
+    </div>
+  </footer>
+
+</body>
+</html>
