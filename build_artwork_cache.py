@@ -1,10 +1,16 @@
 
 """
-AFTERHOURS
-STEP 17 - ARTWORK CACHE GENERATOR
+AFTERHOURS STEP 18
+Missing Album Artwork Recovery
 
 Run:
     python3 build_artwork_cache.py
+
+Sources:
+    Deezer
+    Apple iTunes Search API
+
+Existing artwork entries are preserved.
 """
 
 from __future__ import annotations
@@ -20,16 +26,22 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
+# ==========================================
+# 01. FILE SETTINGS
+# ==========================================
+
 ROOT = Path(__file__).resolve().parent
 
 SOURCE = ROOT / "js" / "data.js"
 
-DESTINATION = ROOT / "images" / "artwork-map.json"
+DESTINATION = (
+    ROOT / "images" / "artwork-map.json"
+)
 
-REQUEST_INTERVAL = 3.3
+REQUEST_INTERVAL = 1.5
 
 
-PATTERN = re.compile(
+TRACK_PATTERN = re.compile(
     r'\bsong\s*\(\s*"(?P<id>(?:hh|rb)\d+)"\s*,\s*'
     r'"(?P<title>(?:\\.|[^"\\])*)"\s*,\s*'
     r'"(?P<artist>(?:\\.|[^"\\])*)"',
@@ -37,91 +49,119 @@ PATTERN = re.compile(
 )
 
 
-def normalize(value: str) -> str:
-    value = unicodedata.normalize(
+# ==========================================
+# 02. TEXT NORMALIZATION
+# ==========================================
+
+def normalize(value):
+    text = unicodedata.normalize(
         "NFKD",
-        value
-    ).lower()
+        str(value or "")
+    ).casefold()
 
     return "".join(
-        char for char in value
+        char for char in text
         if char.isalnum()
     )
 
 
-def clean(value: str) -> str:
+def decode_js_string(raw):
     return (
-        value.replace('\\"', '"')
-             .replace('\\\\', '\\')
+        raw.replace(r'\"', '"')
+           .replace(r'\\', '\\')
     )
 
 
-def get_tracks() -> list[dict]:
-    if not SOURCE.exists():
+def primary_artist(track):
+    artist = re.split(
+        r",|&|\bfeat\.?\b|\bft\.?\b|\bwith\b",
+        track["artist"],
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0]
+
+    return normalize(artist)
+
+
+# ==========================================
+# 03. LOAD TRACKS
+# ==========================================
+
+def load_tracks():
+    if not SOURCE.is_file():
         raise SystemExit(
-            f"ERROR: {SOURCE} does not exist"
+            f"ERROR: {SOURCE} が見つかりません"
         )
 
     source = SOURCE.read_text(
         encoding="utf-8"
     )
 
-    tracks = []
+    tracks = {}
 
-    for match in PATTERN.finditer(source):
-        tracks.append({
+    for match in TRACK_PATTERN.finditer(source):
+        track = {
             "id": match["id"],
-            "title": clean(match["title"]),
-            "artist": clean(match["artist"]),
-        })
+            "title": decode_js_string(
+                match["title"]
+            ),
+            "artist": decode_js_string(
+                match["artist"]
+            ),
+        }
+
+        tracks[track["id"]] = track
 
     if len(tracks) < 50:
         raise SystemExit(
-            f"ERROR: only {len(tracks)} tracks found. "
-            "Please check js/data.js."
+            f"ERROR: {len(tracks)}曲しか"
+            "見つかりません。"
+            "js/data.jsを確認してください"
         )
 
-    unique_tracks = {
-        track["id"]: track
-        for track in tracks
-    }
-
-    return list(unique_tracks.values())
+    return list(tracks.values())
 
 
-def get_existing() -> dict:
+# ==========================================
+# 04. LOAD ARTWORK CACHE
+# ==========================================
+
+def read_cache():
+    if not DESTINATION.exists():
+        return {}
+
     try:
-        previous = json.loads(
+        data = json.loads(
             DESTINATION.read_text(
                 encoding="utf-8"
             )
         )
 
-        return (
-            previous
-            if isinstance(previous, dict)
-            else {}
+    except (OSError, ValueError) as error:
+        raise SystemExit(
+            "ERROR: artwork-map.jsonの"
+            "読み込みに失敗しました。\n"
+            "安全のため上書きしません。\n"
+            f"{error}"
+        ) from error
+
+    if not isinstance(data, dict):
+        raise SystemExit(
+            "ERROR: artwork-map.jsonの"
+            "形式が正しくありません"
         )
 
-    except (
-        OSError,
-        json.JSONDecodeError
-    ):
-        return {}
+    return data
 
 
-def is_matching(
-    entry: object,
-    track: dict
-) -> bool:
-
+def is_saved(entry, track):
     return (
         isinstance(entry, dict)
         and normalize(
-            str(entry.get("title", ""))
+            entry.get("title")
         ) == normalize(track["title"])
         and normalize(
-            str(entry.get("artist", ""))
+            entry.get("artist")
         ) == normalize(track["artist"])
         and str(
             entry.get("image", "")
@@ -129,7 +169,11 @@ def is_matching(
     )
 
 
-def save(cache: dict) -> None:
+# ==========================================
+# 05. SAVE CACHE
+# ==========================================
+
+def save_cache(cache):
     DESTINATION.parent.mkdir(
         parents=True,
         exist_ok=True
@@ -149,185 +193,331 @@ def save(cache: dict) -> None:
         encoding="utf-8"
     )
 
-    temporary.replace(
-        DESTINATION
+    temporary.replace(DESTINATION)
+
+
+# ==========================================
+# 06. API REQUEST
+# ==========================================
+
+last_request = 0.0
+
+
+def fetch_json(url):
+    global last_request
+
+    delay = (
+        REQUEST_INTERVAL
+        - (time.monotonic() - last_request)
     )
 
+    if delay > 0:
+        time.sleep(delay)
 
-def search(track: dict) -> dict | None:
-    params = urlencode({
-        "term": (
-            f'{track["title"]} '
-            f'{track["artist"]}'
-        ),
-        "country": "US",
-        "media": "music",
-        "entity": "song",
-        "limit": 25,
-    })
+    last_request = time.monotonic()
 
     request = Request(
-        "https://itunes.apple.com/search?"
-        + params,
+        url,
         headers={
             "User-Agent":
-                "AFTERHOURS-Chart-Cache/1.0"
+                "Mozilla/5.0 AFTERHOURS-artwork/1.0",
+            "Accept": "application/json"
         }
     )
 
     try:
         with urlopen(
             request,
-            timeout=20
+            timeout=18
         ) as response:
             data = json.load(response)
+
+        if isinstance(data, dict):
+            return data
+
+        return None
 
     except (
         HTTPError,
         URLError,
         TimeoutError,
-        ValueError
+        ValueError,
+        OSError
     ) as error:
         print(
-            f"  API error: {error}"
+            f"  APIへの接続失敗: {error}"
         )
+
         return None
 
-    title = normalize(
+
+# ==========================================
+# 07. DEEZER ARTWORK SEARCH
+# ==========================================
+
+def search_deezer(track):
+    artist_query = track["artist"].split(
+        " & "
+    )[0]
+
+    queries = [
+        (
+            f'track:"{track["title"]}" '
+            f'artist:"{artist_query}"'
+        ),
+        (
+            f'{track["title"]} '
+            f'{artist_query}'
+        )
+    ]
+
+    target_title = normalize(
         track["title"]
     )
 
-    primary_artist = normalize(
-        re.split(
-            r',|&|\bfeat\.?\b|\bft\.?\b',
-            track["artist"],
-            flags=re.I
-        )[0]
+    target_artist = primary_artist(
+        track
     )
 
-    for item in data.get(
-        "results",
-        []
-    ):
-        found_title = normalize(
-            str(item.get(
-                "trackName",
-                ""
-            ))
+    for query in queries:
+        params = urlencode({
+            "q": query,
+            "limit": 50
+        })
+
+        url = (
+            "https://api.deezer.com/"
+            "search/track?"
+            + params
         )
 
-        found_artist = normalize(
-            str(item.get(
-                "artistName",
-                ""
-            ))
-        )
+        payload = fetch_json(url)
 
-        artwork = item.get(
-            "artworkUrl100",
-            ""
-        )
-
-        matching = (
-            (
-                found_title == title
-                or found_title.startswith(title)
-            )
-            and primary_artist in found_artist
-            and isinstance(artwork, str)
-            and artwork.startswith("https://")
-        )
-
-        if not matching:
+        if not payload:
             continue
 
-        image = re.sub(
-            r"\b\d+x\d+bb(?=\.)",
-            "300x300bb",
-            artwork
-        )
+        for item in payload.get("data", []):
+            if not isinstance(item, dict):
+                continue
 
-        return {
-            "title": track["title"],
-            "artist": track["artist"],
-            "image": image,
-            "link": item.get(
-                "trackViewUrl",
-                ""
+            candidate_title = normalize(
+                item.get("title_short")
+                or item.get("title")
             )
-        }
+
+            candidate_artist = normalize(
+                (
+                    item.get("artist") or {}
+                ).get("name")
+            )
+
+            album = item.get("album") or {}
+
+            image = (
+                album.get("cover_big")
+                or album.get("cover_medium")
+            )
+
+            link = item.get("link")
+
+            if (
+                candidate_title == target_title
+                and candidate_artist == target_artist
+                and isinstance(image, str)
+                and image.startswith("https://")
+                and isinstance(link, str)
+                and link.startswith("https://")
+            ):
+                return {
+                    "title": track["title"],
+                    "artist": track["artist"],
+                    "image": image,
+                    "link": link,
+                    "source": "Deezer"
+                }
 
     return None
 
 
-def main() -> None:
-    tracks = get_tracks()
+# ==========================================
+# 08. APPLE ITUNES SEARCH
+# ==========================================
 
-    cached = get_existing()
+def search_itunes(track):
+    target_title = normalize(
+        track["title"]
+    )
 
-    save(cached)
+    target_artist = primary_artist(
+        track
+    )
 
-    already = sum(
-        is_matching(
-            cached.get(track["id"]),
+    for country in ["GB", "JP", "US"]:
+        params = urlencode({
+            "term": (
+                f'{track["title"]} '
+                f'{track["artist"]}'
+            ),
+            "country": country,
+            "media": "music",
+            "entity": "song",
+            "limit": 100
+        })
+
+        url = (
+            "https://itunes.apple.com/"
+            "search?"
+            + params
+        )
+
+        payload = fetch_json(url)
+
+        if not payload:
+            continue
+
+        for item in payload.get(
+            "results",
+            []
+        ):
+            if not isinstance(item, dict):
+                continue
+
+            candidate_title = normalize(
+                item.get("trackName")
+            )
+
+            candidate_artist = normalize(
+                item.get("artistName")
+            )
+
+            image = item.get(
+                "artworkUrl100"
+            )
+
+            link = item.get(
+                "trackViewUrl"
+            )
+
+            if (
+                candidate_title == target_title
+                and target_artist in candidate_artist
+                and isinstance(image, str)
+                and image.startswith("https://")
+                and isinstance(link, str)
+                and link.startswith("https://")
+            ):
+                image = re.sub(
+                    r"\b\d+x\d+bb(?=\.)",
+                    "300x300bb",
+                    image
+                )
+
+                return {
+                    "title": track["title"],
+                    "artist": track["artist"],
+                    "image": image,
+                    "link": link,
+                    "source": "iTunes"
+                }
+
+    return None
+
+
+# ==========================================
+# 09. MAIN PROCESS
+# ==========================================
+
+def main():
+    tracks = load_tracks()
+
+    cache = read_cache()
+
+    existing_count = sum(
+        is_saved(
+            cache.get(track["id"]),
             track
         )
         for track in tracks
     )
 
-    print(
-        "AFTERHOURS ARTWORK CACHE"
-    )
-
-    print(
-        f"TRACKS: {len(tracks)}"
-    )
-
-    print(
-        f"ALREADY SAVED: {already}"
-    )
-
-    last_call = 0.0
-
-    for index, track in enumerate(
-        tracks,
-        1
-    ):
-        if is_matching(
-            cached.get(track["id"]),
+    missing = [
+        track for track in tracks
+        if not is_saved(
+            cache.get(track["id"]),
             track
-        ):
-            continue
+        )
+    ]
 
-        delay = max(
-            0,
-            REQUEST_INTERVAL -
-            (time.monotonic() - last_call)
+    print(
+        "AFTERHOURS STEP 18"
+    )
+
+    print(
+        "MISSING ARTWORK RECOVERY"
+    )
+
+    print(
+        f"TOTAL: {len(tracks)}"
+    )
+
+    print(
+        f"ALREADY SAVED: {existing_count}"
+    )
+
+    print(
+        f"MISSING: {len(missing)}"
+    )
+
+    if not missing:
+        print(
+            "ALL ARTWORK ENTRIES ALREADY SAVED"
+        )
+        return
+
+    # Backup existing artwork data
+
+    if DESTINATION.is_file():
+        backup = DESTINATION.with_name(
+            "artwork-map.backup.json"
         )
 
-        if delay:
-            time.sleep(delay)
-
-        last_call = time.monotonic()
+        backup.write_bytes(
+            DESTINATION.read_bytes()
+        )
 
         print(
-            f"[{index}/{len(tracks)}] "
-            f"{track['title']} / "
-            f"{track['artist']}",
+            f"BACKUP: {backup.name}"
+        )
+
+    found = 0
+
+    for index, track in enumerate(
+        missing,
+        1
+    ):
+        print(
+            f'[{index}/{len(missing)}] '
+            f'{track["title"]} / '
+            f'{track["artist"]}',
             flush=True
         )
 
-        result = search(track)
+        result = (
+            search_deezer(track)
+            or search_itunes(track)
+        )
 
         if result:
-            cached[
+            cache[
                 track["id"]
             ] = result
 
-            save(cached)
+            save_cache(cache)
+
+            found += 1
 
             print(
-                "  OK",
+                f'  OK ({result["source"]})',
                 flush=True
             )
 
@@ -337,19 +527,31 @@ def main() -> None:
                 flush=True
             )
 
-    saved = sum(
-        is_matching(
-            cached.get(track["id"]),
+    total = sum(
+        is_saved(
+            cache.get(track["id"]),
             track
         )
         for track in tracks
     )
 
+    print()
     print(
-        f"FINISHED: {saved}/{len(tracks)} "
-        "artwork links saved to "
-        "images/artwork-map.json"
+        f"NEW ARTWORK: {found}"
     )
+
+    print(
+        f"TOTAL ARTWORK: {total}/{len(tracks)}"
+    )
+
+    print(
+        "SAVED: images/artwork-map.json"
+    )
+
+    if total < len(tracks):
+        print(
+            "Some covers are still unavailable."
+        )
 
 
 if __name__ == "__main__":
