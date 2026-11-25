@@ -2,25 +2,23 @@
 "use strict";
 
 /*
- * AFTERHOURS STEP 24
- * COMMUNITY CHART - MONTHLY ARCHIVE SUPPORT
+ * AFTERHOURS COMMUNITY CHART
+ * STEP 24 - ARTWORK FIX
  *
- * - Live Supabase voting rankings
- * - Finalized monthly chart snapshots
- * - LIVE / FINAL / PROVISIONAL labels
- * - Previous-month movement
- * - HIP-HOP / R&B
- * - Automatic refresh every 30 seconds
- * - Refresh on tab return
- * - Album artwork cache
- *
- * No changes to existing voting pages.
+ * Features:
+ * - Correct album artwork display
+ * - Supabase voting rankings
+ * - Archived monthly rankings
+ * - Monthly movement indicators
+ * - Automatic refresh (30 seconds)
+ * - HIP-HOP / R&B filters
  */
 
 (() => {
-  const REFRESH_INTERVAL = 30_000;
-  const CONFIG = window.AFTERHOURS_SUPABASE;
-  const DATA = window.AFTERHOURS_DATA || {};
+  const INTERVAL = 30000;
+
+  const config = window.AFTERHOURS_SUPABASE;
+  const library = window.AFTERHOURS_DATA || {};
 
   const ui = {
     list: document.querySelector("#community-list"),
@@ -32,10 +30,8 @@
     refresh: document.querySelector("#refresh-chart")
   };
 
-  if (Object.values(ui).some(value => !value)) {
-    console.error(
-      "[AFTERHOURS] Required page elements are missing."
-    );
+  if (Object.values(ui).some(element => !element)) {
+    console.error("Missing community page elements");
     return;
   }
 
@@ -44,19 +40,18 @@
     ready: false,
     genre: "hiphop",
     artwork: {},
-    latestMonth: "",
-    requestId: 0,
+    currentMonth: "",
+    request: 0,
     loading: false,
     timer: null,
-    lastUpdated: 0,
-    signature: null,
-    loaded: false,
-    lastGoodLabel: ""
+    lastUpdate: 0,
+    signature: "",
+    loaded: false
   };
 
-  // =========================================
-  // DATE AND TIME
-  // =========================================
+  // ======================================
+  // DATE
+  // ======================================
 
   function japanMonth() {
     const parts = new Intl.DateTimeFormat(
@@ -69,39 +64,33 @@
     ).formatToParts(new Date());
 
     const year = parts.find(
-      item => item.type === "year"
+      part => part.type === "year"
     ).value;
 
     const month = parts.find(
-      item => item.type === "month"
+      part => part.type === "month"
     ).value;
 
     return `${year}-${month}`;
   }
 
   function shiftMonth(value, offset) {
-    const [year, month] = value
-      .split("-")
-      .map(Number);
+    const [year, month] = value.split("-").map(Number);
 
-    const date = new Date(
+    return new Date(
       Date.UTC(year, month - 1 + offset, 1)
-    );
-
-    return date.toISOString().slice(0, 7);
+    ).toISOString().slice(0, 7);
   }
 
-  function monthLabel(value) {
-    const [year, month] = value
-      .split("-")
-      .map(Number);
+  function formatMonth(value) {
+    const [year, month] = value.split("-").map(Number);
 
     return new Intl.DateTimeFormat(
       "en-US",
       {
-        timeZone: "UTC",
         year: "numeric",
-        month: "long"
+        month: "long",
+        timeZone: "UTC"
       }
     ).format(
       new Date(Date.UTC(year, month - 1, 1))
@@ -112,73 +101,71 @@
     return new Intl.DateTimeFormat(
       "en-GB",
       {
-        timeZone: "Asia/Tokyo",
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-        hour12: false
+        hour12: false,
+        timeZone: "Asia/Tokyo"
       }
     ).format(new Date());
   }
 
-  function populateMonths(selected) {
+  function fillMonths(selected) {
     const latest = japanMonth();
 
     ui.month.replaceChildren();
 
     for (let i = 0; i < 12; i++) {
-      const value = shiftMonth(latest, -i);
+      const month = shiftMonth(latest, -i);
+      const option = document.createElement("option");
 
-      const option = document.createElement(
-        "option"
-      );
-
-      option.value = value;
-      option.textContent = monthLabel(value);
+      option.value = month;
+      option.textContent = formatMonth(month);
 
       ui.month.append(option);
     }
 
-    const valid = Array.from(
-      ui.month.options
-    ).some(option => option.value === selected);
+    ui.month.value = Array.from(ui.month.options)
+      .some(option => option.value === selected)
+      ? selected
+      : latest;
 
-    ui.month.value = valid ? selected : latest;
-    state.latestMonth = latest;
+    state.currentMonth = latest;
   }
 
-  function checkMonthChange() {
+  function checkMonthRollover() {
     const latest = japanMonth();
 
-    if (latest === state.latestMonth) {
-      return;
-    }
+    if (latest === state.currentMonth) return;
 
-    const watchingCurrent =
-      ui.month.value === state.latestMonth;
+    const followingCurrent =
+      ui.month.value === state.currentMonth;
 
-    populateMonths(
-      watchingCurrent ? latest : ui.month.value
+    fillMonths(
+      followingCurrent ? latest : ui.month.value
     );
 
-    state.signature = null;
+    state.signature = "";
   }
 
-  // =========================================
-  // COMMON HELPERS
-  // =========================================
+  // ======================================
+  // HELPERS
+  // ======================================
 
   function setStatus(message, error = false) {
     ui.status.textContent = message;
     ui.status.classList.toggle("error", error);
   }
 
-  function safeHttpsUrl(value) {
+  function safeImageUrl(value) {
     try {
       const url = new URL(value);
-      return url.protocol === "https:"
-        ? url.href
-        : null;
+
+      if (url.protocol !== "https:") {
+        return null;
+      }
+
+      return url.href;
     } catch {
       return null;
     }
@@ -192,24 +179,18 @@
   }
 
   function getTracks(genre) {
-    const items = DATA[genre];
-    return Array.isArray(items)
-      ? items.slice(0, 50)
+    const tracks = library[genre];
+
+    return Array.isArray(tracks)
+      ? tracks.slice(0, 50)
       : [];
   }
 
-  function updateGenreTabs() {
+  function updateTabs() {
     const hiphop = state.genre === "hiphop";
 
-    ui.hiphop.classList.toggle(
-      "active",
-      hiphop
-    );
-
-    ui.rnb.classList.toggle(
-      "active",
-      !hiphop
-    );
+    ui.hiphop.classList.toggle("active", hiphop);
+    ui.rnb.classList.toggle("active", !hiphop);
 
     ui.hiphop.setAttribute(
       "aria-pressed",
@@ -222,17 +203,17 @@
     );
   }
 
-  // =========================================
-  // STATUS DESIGN
-  // =========================================
+  // ======================================
+  // STYLES
+  // ======================================
 
   function installStyles() {
-    if (document.querySelector("#ah-extra-css")) {
+    if (document.querySelector("#ah-community-css")) {
       return;
     }
 
     const style = document.createElement("style");
-    style.id = "ah-extra-css";
+    style.id = "ah-community-css";
 
     style.textContent = `
       .ah-movement {
@@ -244,66 +225,67 @@
         font: 800 10px "Space Grotesk", sans-serif;
         letter-spacing: .5px;
       }
-
       .ah-movement.up {
         color: #48f3bc;
         background: #48f3bc16;
         border: 1px solid #48f3bc45;
       }
-
       .ah-movement.down {
         color: #ff92a1;
         background: #ff92a116;
         border: 1px solid #ff92a145;
       }
-
       .ah-movement.same {
         color: #a9b8ce;
         background: #a9b8ce16;
         border: 1px solid #a9b8ce45;
       }
-
       .ah-movement.new {
         color: #eaa4ff;
         background: #eaa4ff16;
         border: 1px solid #eaa4ff45;
       }
-
       .ah-chart-meta {
-        margin: 0 0 22px;
-        padding: 13px 16px;
-        border: 1px solid #273147;
-        border-radius: 10px;
-        background: #111729;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 12px;
+        padding: 13px 16px;
+        margin: 0 0 22px;
+        border: 1px solid #273147;
+        border-radius: 10px;
+        background: #111729;
         color: #98a6bd;
         font-size: 12px;
         line-height: 1.6;
       }
-
       .ah-state-label {
         padding: 5px 10px;
         border-radius: 5px;
         font: 800 11px "Space Grotesk", sans-serif;
         letter-spacing: 1px;
       }
-
       .ah-state-label.live {
         color: #40e5ed;
         background: #40e5ed1b;
       }
-
       .ah-state-label.final {
         color: #48f3bc;
         background: #48f3bc1b;
       }
-
       .ah-state-label.provisional {
         color: #ffce82;
         background: #ffce821b;
+      }
+      .artwork {
+        position: relative;
+        overflow: hidden;
+      }
+      .artwork img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
     `;
 
@@ -311,83 +293,58 @@
   }
 
   function ensureMeta() {
-    let container = document.querySelector(
-      "#ah-chart-meta"
-    );
+    let meta = document.querySelector("#ah-chart-meta");
 
-    if (container) {
-      return container;
-    }
+    if (meta) return meta;
 
-    container = document.createElement("div");
-    container.id = "ah-chart-meta";
-    container.className = "ah-chart-meta";
+    meta = document.createElement("div");
+    meta.id = "ah-chart-meta";
+    meta.className = "ah-chart-meta";
 
-    const heading = document.querySelector(
-      ".board-heading"
-    );
+    document.querySelector(".board-heading")
+      ?.insertAdjacentElement("afterend", meta);
 
-    if (heading) {
-      heading.insertAdjacentElement(
-        "afterend",
-        container
-      );
-    }
-
-    return container;
+    return meta;
   }
 
   function updateMeta(chart, previous) {
-    const container = ensureMeta();
+    const meta = ensureMeta();
 
     const label = document.createElement("span");
-
     label.className =
       `ah-state-label ${chart.status.toLowerCase()}`;
-
     label.textContent = chart.status;
 
     const description = document.createElement("span");
 
-    if (chart.status === "FINAL") {
-      description.textContent =
-        `${monthLabel(chart.month)} · ` +
-        "Officially finalized community vote results";
-    } else if (chart.status === "LIVE") {
-      description.textContent =
-        `${monthLabel(chart.month)} · ` +
-        "Voting currently open";
-    } else {
-      description.textContent =
-        `${monthLabel(chart.month)} · ` +
-        "Past results not yet finalized";
-    }
+    const detail = chart.status === "FINAL"
+      ? "Finalized community vote results"
+      : chart.status === "LIVE"
+        ? "Voting currently open"
+        : "Past results not yet finalized";
 
-    const movement = document.createElement(
-      "span"
-    );
+    description.textContent =
+      `${formatMonth(chart.month)} · ${detail}`;
 
-    if (!previous.available) {
-      movement.textContent =
-        "Monthly movement: comparison unavailable";
-    } else if (previous.ranking.length === 0) {
-      movement.textContent =
-        "Monthly movement: no previous-month votes";
-    } else {
-      movement.textContent =
-        `Compared with ${monthLabel(previous.month)}`;
-    }
+    const comparison = document.createElement("span");
 
-    container.replaceChildren(
+    comparison.textContent =
+      !previous.available
+        ? "Monthly movement: comparison unavailable"
+        : previous.ranking.length === 0
+          ? "Monthly movement: no previous-month votes"
+          : `Compared with ${formatMonth(previous.month)}`;
+
+    meta.replaceChildren(
       label,
       description,
-      movement
+      comparison
     );
   }
 
-  // =========================================
-  // ARTWORK CACHE
-  // =========================================
+  // ======================================
+  // ARTWORK
+  // ======================================
 
   async function loadArtwork() {
     try {
@@ -397,7 +354,9 @@
       );
 
       if (!response.ok) {
-        return;
+        throw new Error(
+          `Artwork map HTTP ${response.status}`
+        );
       }
 
       const result = await response.json();
@@ -408,78 +367,95 @@
         !Array.isArray(result)
       ) {
         state.artwork = result;
+
+        console.info(
+          "[AFTERHOURS] Artwork entries:",
+          Object.keys(result).length
+        );
       }
     } catch (error) {
       console.warn(
-        "[AFTERHOURS] Artwork unavailable:",
+        "[AFTERHOURS] Artwork loading failed:",
         error
       );
     }
   }
 
   function createArtwork(track) {
-    const container = document.createElement(
-      "div"
-    );
+    const box = document.createElement("div");
+    box.className = "artwork";
 
-    container.className = "artwork";
-    container.textContent = String(
+    const fallback = document.createElement("span");
+    fallback.textContent = String(
       track.title || "?"
     ).charAt(0).toUpperCase();
 
     const saved = state.artwork[track.id];
 
     if (!saved) {
-      return container;
+      box.append(fallback);
+      return box;
     }
 
+    // Prevent a different song's artwork
+    // from being attached to this track.
     if (
-      normalize(saved.title) !==
-        normalize(track.title) ||
-      normalize(saved.artist) !==
-        normalize(track.artist)
+      normalize(saved.title) !== normalize(track.title) ||
+      normalize(saved.artist) !== normalize(track.artist)
     ) {
-      return container;
+      console.warn(
+        "[AFTERHOURS] Artwork metadata mismatch:",
+        track.id
+      );
+
+      box.append(fallback);
+      return box;
     }
 
-    const url = safeHttpsUrl(saved.image);
+    const url = safeImageUrl(saved.image);
 
     if (!url) {
-      return container;
+      box.append(fallback);
+      return box;
     }
 
-    const image = document.createElement(
-      "img"
-    );
+    const image = document.createElement("img");
 
     image.alt = `${track.title} artwork`;
     image.loading = "lazy";
     image.decoding = "async";
 
-    image.onload = () => {
-      if (container.isConnected) {
-        container.replaceChildren(image);
-      }
+    // IMPORTANT FIX:
+    // Put the image in the DOM immediately.
+    // The old implementation waited for onload
+    // and checked box.isConnected. That could
+    // leave the artwork permanently hidden.
+    image.onerror = () => {
+      console.warn(
+        "[AFTERHOURS] Image failed:",
+        track.id
+      );
+
+      box.replaceChildren(fallback);
     };
 
     image.src = url;
+    box.append(image);
 
-    return container;
+    return box;
   }
 
-  // =========================================
-  // SUPABASE DATABASE
-  // =========================================
+  // ======================================
+  // DATABASE
+  // ======================================
 
-  async function callRpc(name, params) {
+  async function rpc(name, params) {
     const { data, error } = await state.db.rpc(
       name,
       params
     );
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return data;
   }
@@ -488,36 +464,33 @@
     const totals = new Map();
 
     for (const row of rows || []) {
-      const count = Number(row.votes);
+      const votes = Number(row.votes);
 
       if (
         typeof row.track_id === "string" &&
-        Number.isSafeInteger(count) &&
-        count > 0
+        Number.isSafeInteger(votes) &&
+        votes > 0
       ) {
-        totals.set(row.track_id, count);
+        totals.set(row.track_id, votes);
       }
     }
 
     return totals;
   }
 
-  function rankLiveTracks(genre, totals) {
+  function rankLive(genre, rows) {
+    const totals = voteTotals(rows);
+
     return getTracks(genre)
       .map(track => ({
         track,
         votes: totals.get(track.id) || 0
       }))
       .filter(item => item.votes > 0)
-      .sort((a, b) => {
-        if (a.votes !== b.votes) {
-          return b.votes - a.votes;
-        }
-
-        return a.track.id.localeCompare(
-          b.track.id
-        );
-      })
+      .sort((a, b) =>
+        b.votes - a.votes ||
+        a.track.id.localeCompare(b.track.id)
+      )
       .slice(0, 50)
       .map((item, index) => ({
         ...item,
@@ -525,11 +498,12 @@
       }));
   }
 
-  function rankArchivedTracks(genre, rows) {
+  function rankArchived(genre, rows) {
     const tracks = new Map(
-      getTracks(genre).map(
-        track => [track.id, track]
-      )
+      getTracks(genre).map(track => [
+        track.id,
+        track
+      ])
     );
 
     return (rows || [])
@@ -549,16 +523,14 @@
       .sort((a, b) => a.rank - b.rank);
   }
 
-  async function getMonthlyChart(month, genre) {
-    const finalized = await callRpc(
+  async function getChart(month, genre) {
+    const finalized = await rpc(
       "is_chart_month_finalized",
       { p_month: month }
     );
 
-    // Never replace an archived result with
-    // a recalculated live vote count.
     if (finalized === true) {
-      const rows = await callRpc(
+      const rows = await rpc(
         "get_archived_chart",
         { p_month: month }
       );
@@ -566,39 +538,32 @@
       return {
         month,
         status: "FINAL",
-        ranking: rankArchivedTracks(
-          genre,
-          rows
-        )
+        ranking: rankArchived(genre, rows)
       };
     }
 
     if (finalized !== false) {
-      throw new Error(
-        "Invalid archive status response."
-      );
+      throw new Error("Invalid finalized status");
     }
 
-    const rows = await callRpc(
+    const rows = await rpc(
       "get_vote_counts",
       { p_month: month }
     );
 
     return {
       month,
-      status: month === japanMonth()
-        ? "LIVE"
-        : "PROVISIONAL",
-      ranking: rankLiveTracks(
-        genre,
-        voteTotals(rows)
-      )
+      status:
+        month === japanMonth()
+          ? "LIVE"
+          : "PROVISIONAL",
+      ranking: rankLive(genre, rows)
     };
   }
 
-  // =========================================
-  // PREVIOUS MONTH MOVEMENT
-  // =========================================
+  // ======================================
+  // MOVEMENT
+  // ======================================
 
   function addMovement(current, previous) {
     if (
@@ -619,9 +584,7 @@
     );
 
     return current.map(item => {
-      const oldRank = positions.get(
-        item.track.id
-      );
+      const oldRank = positions.get(item.track.id);
 
       if (oldRank === undefined) {
         return {
@@ -633,41 +596,32 @@
         };
       }
 
-      const difference = oldRank - item.rank;
-
-      if (difference > 0) {
-        return {
-          ...item,
-          movement: {
-            type: "up",
-            label: `↑ UP ${difference}`
-          }
-        };
-      }
-
-      if (difference < 0) {
-        return {
-          ...item,
-          movement: {
-            type: "down",
-            label: `↓ DOWN ${Math.abs(difference)}`
-          }
-        };
-      }
+      const change = oldRank - item.rank;
 
       return {
         ...item,
-        movement: {
-          type: "same",
-          label: "— SAME"
-        }
+        movement:
+          change > 0
+            ? {
+                type: "up",
+                label: `↑ UP ${change}`
+              }
+            : change < 0
+              ? {
+                  type: "down",
+                  label: `↓ DOWN ${Math.abs(change)}`
+                }
+              : {
+                  type: "same",
+                  label: "— SAME"
+                }
       };
     });
   }
 
-  // =========================================
-  // RENDER RANKING
-  // =========================================
+  // ======================================
+  // RENDER
+  // ======================================
 
   function createRow(item) {
     const row = document.createElement("li");
@@ -691,39 +645,27 @@
     info.append(title, artist);
 
     if (item.movement) {
-      const movement = document.createElement(
-        "span"
-      );
+      const badge = document.createElement("span");
 
-      movement.className =
+      badge.className =
         `ah-movement ${item.movement.type}`;
 
-      movement.textContent =
-        item.movement.label;
+      badge.textContent = item.movement.label;
 
-      info.append(movement);
+      info.append(badge);
     }
 
-    const votes = document.createElement(
-      "div"
-    );
-
+    const votes = document.createElement("div");
     votes.className = "votes";
 
-    const amount = document.createElement(
-      "span"
-    );
-
-    amount.textContent =
+    const number = document.createElement("span");
+    number.textContent =
       item.votes.toLocaleString("en-US");
 
-    const label = document.createElement(
-      "small"
-    );
-
+    const label = document.createElement("small");
     label.textContent = "VOTES";
 
-    votes.append(amount, label);
+    votes.append(number, label);
 
     row.append(
       rank,
@@ -735,12 +677,12 @@
     return row;
   }
 
-  function renderRanking(chart, rows) {
+  function render(chart, ranking) {
     const signature = JSON.stringify({
       genre: state.genre,
       month: chart.month,
       status: chart.status,
-      rows: rows.map(item => [
+      rows: ranking.map(item => [
         item.track.id,
         item.rank,
         item.votes,
@@ -758,14 +700,15 @@
     const fragment =
       document.createDocumentFragment();
 
-    for (const item of rows) {
+    for (const item of ranking) {
       fragment.append(createRow(item));
     }
 
     ui.list.replaceChildren(fragment);
-    ui.empty.hidden = rows.length !== 0;
 
-    if (rows.length === 0) {
+    ui.empty.hidden = ranking.length > 0;
+
+    if (ranking.length === 0) {
       ui.empty.textContent =
         chart.status === "FINAL"
           ? "No votes were recorded for this genre in the finalized month."
@@ -776,14 +719,12 @@
     state.loaded = true;
   }
 
-  // =========================================
-  // SYNC WITH DATABASE
-  // =========================================
+  // ======================================
+  // REFRESH
+  // ======================================
 
   async function loadRanking(reason = "manual") {
-    if (!state.ready || !state.db) {
-      return;
-    }
+    if (!state.ready) return;
 
     if (reason === "auto" && document.hidden) {
       return;
@@ -793,9 +734,10 @@
       return;
     }
 
-    checkMonthChange();
+    checkMonthRollover();
 
-    const requestId = ++state.requestId;
+    const requestId = ++state.request;
+
     const month = ui.month.value;
     const genre = state.genre;
     const previousMonth = shiftMonth(month, -1);
@@ -810,121 +752,93 @@
     );
 
     try {
-      // The selected month must load successfully.
-      // A failed comparison must not hide the chart.
-      const [chart, previousResult] =
-        await Promise.all([
-          getMonthlyChart(month, genre),
-          getMonthlyChart(previousMonth, genre)
-            .then(value => ({
-              available: true,
-              ...value
-            }))
-            .catch(error => {
-              console.warn(
-                "[AFTERHOURS] Comparison unavailable:",
-                error
-              );
+      const [chart, previous] = await Promise.all([
+        getChart(month, genre),
 
-              return {
-                available: false,
-                month: previousMonth,
-                ranking: []
-              };
-            })
-        ]);
+        getChart(previousMonth, genre)
+          .then(result => ({
+            ...result,
+            available: true
+          }))
+          .catch(error => {
+            console.warn(
+              "Previous chart unavailable:",
+              error
+            );
 
-      // Ignore responses from older requests.
-      if (requestId !== state.requestId) {
+            return {
+              month: previousMonth,
+              ranking: [],
+              available: false
+            };
+          })
+      ]);
+
+      if (requestId !== state.request) {
         return;
       }
 
-      const ranked = addMovement(
+      const ranking = addMovement(
         chart.ranking,
-        previousResult
+        previous
       );
 
-      renderRanking(chart, ranked);
-      updateMeta(chart, previousResult);
+      render(chart, ranking);
+      updateMeta(chart, previous);
 
-      state.lastUpdated = Date.now();
-
-      state.lastGoodLabel =
-        `${chart.status} / ${ranked.length} TRACKS`;
+      state.lastUpdate = Date.now();
 
       setStatus(
-        `● ${state.lastGoodLabel} / ` +
+        `● ${chart.status} / ` +
+        `${ranking.length} TRACKS / ` +
         `${japanClock()} JST`
       );
-
-      console.info(
-        "[AFTERHOURS] Chart updated",
-        {
-          reason,
-          genre,
-          month,
-          chartStatus: chart.status,
-          tracks: ranked.length
-        }
-      );
-
     } catch (error) {
-      if (requestId !== state.requestId) {
+      if (requestId !== state.request) {
         return;
       }
 
       console.error(
-        "[AFTERHOURS] Ranking update failed:",
+        "[AFTERHOURS] Chart error:",
         error
       );
 
-      if (state.loaded) {
-        setStatus(
-          "SYNC FAILED / SHOWING LAST RESULTS",
-          true
-        );
-      } else {
-        ui.list.replaceChildren();
-        ui.empty.hidden = true;
-
-        setStatus(
-          "DATABASE ERROR / PLEASE RETRY",
-          true
-        );
-      }
-
+      setStatus(
+        state.loaded
+          ? "SYNC FAILED / SHOWING LAST RESULTS"
+          : "DATABASE ERROR / PLEASE RETRY",
+        true
+      );
     } finally {
-      if (requestId === state.requestId) {
+      if (requestId === state.request) {
         state.loading = false;
         ui.refresh.disabled = false;
       }
     }
   }
 
-  // =========================================
-  // SUPABASE CONNECTION
-  // =========================================
+  // ======================================
+  // AUTHENTICATION
+  // ======================================
 
-  async function connectSupabase() {
+  async function connect() {
     if (
-      !CONFIG ||
-      !safeHttpsUrl(CONFIG.url) ||
-      !CONFIG.publishableKey
+      !config ||
+      !safeImageUrl(config.url) ||
+      !config.publishableKey
     ) {
       throw new Error(
-        "Supabase configuration missing."
+        "Supabase configuration missing"
       );
     }
 
     if (!window.supabase?.createClient) {
-      throw new Error(
-        "Supabase SDK failed to load."
-      );
+      throw new Error("Supabase SDK unavailable");
     }
 
     state.db = window.supabase.createClient(
-      CONFIG.url,
-      CONFIG.publishableKey,
+      config.url,
+      config.publishableKey,
       {
         auth: {
           persistSession: true,
@@ -933,155 +847,125 @@
       }
     );
 
-    const session =
-      await state.db.auth.getSession();
+    const session = await state.db.auth.getSession();
 
     if (session.error) {
       throw session.error;
     }
 
     if (!session.data.session) {
-      const login =
-        await state.db.auth.signInAnonymously();
+      const result = await state.db.auth
+        .signInAnonymously();
 
-      if (login.error) {
-        throw login.error;
-      }
+      if (result.error) throw result.error;
     }
 
     const user = await state.db.auth.getUser();
 
     if (user.error || !user.data.user) {
       throw user.error ||
-        new Error("Authentication failed.");
+        new Error("Authentication failed");
     }
 
     state.ready = true;
   }
 
-  // =========================================
-  // AUTOMATIC REFRESH
-  // =========================================
+  // ======================================
+  // AUTO REFRESH
+  // ======================================
 
-  function stopAutoRefresh() {
+  function stopTimer() {
     if (state.timer !== null) {
       clearInterval(state.timer);
       state.timer = null;
     }
   }
 
-  function startAutoRefresh() {
-    stopAutoRefresh();
+  function startTimer() {
+    stopTimer();
 
     state.timer = setInterval(() => {
       if (
-        !state.ready ||
-        document.hidden ||
-        state.loading
+        state.ready &&
+        !document.hidden &&
+        !state.loading
       ) {
-        return;
+        loadRanking("auto");
       }
-
-      loadRanking("auto");
-
-    }, REFRESH_INTERVAL);
+    }, INTERVAL);
   }
 
-  // =========================================
-  // USER ACTIONS
-  // =========================================
+  // ======================================
+  // EVENTS
+  // ======================================
 
-  ui.hiphop.addEventListener(
-    "click",
-    () => {
-      if (state.genre === "hiphop") {
-        return;
-      }
+  ui.hiphop.addEventListener("click", () => {
+    if (state.genre === "hiphop") return;
 
-      state.genre = "hiphop";
-      updateGenreTabs();
-      loadRanking("genre");
-    }
-  );
+    state.genre = "hiphop";
+    updateTabs();
+    loadRanking("genre");
+  });
 
-  ui.rnb.addEventListener(
-    "click",
-    () => {
-      if (state.genre === "rnb") {
-        return;
-      }
+  ui.rnb.addEventListener("click", () => {
+    if (state.genre === "rnb") return;
 
-      state.genre = "rnb";
-      updateGenreTabs();
-      loadRanking("genre");
-    }
-  );
+    state.genre = "rnb";
+    updateTabs();
+    loadRanking("genre");
+  });
 
   ui.month.addEventListener(
     "change",
-    () => {
-      loadRanking("month");
-    }
+    () => loadRanking("month")
   );
 
   ui.refresh.addEventListener(
     "click",
-    () => {
-      loadRanking("manual");
-    }
+    () => loadRanking("manual")
   );
 
   document.addEventListener(
     "visibilitychange",
     () => {
-      if (!state.ready || document.hidden) {
-        return;
-      }
+      if (!state.ready || document.hidden) return;
 
-      if (
-        Date.now() - state.lastUpdated >= 10_000
-      ) {
+      if (Date.now() - state.lastUpdate >= 10000) {
         loadRanking("return");
       }
     }
   );
 
-  window.addEventListener(
-    "pagehide",
-    stopAutoRefresh
-  );
+  window.addEventListener("pagehide", stopTimer);
 
-  window.addEventListener(
-    "pageshow",
-    event => {
-      if (event.persisted && state.ready) {
-        startAutoRefresh();
-        loadRanking("return");
-      }
+  window.addEventListener("pageshow", event => {
+    if (event.persisted && state.ready) {
+      startTimer();
+      loadRanking("return");
     }
-  );
+  });
 
-  // =========================================
-  // INITIALIZE
-  // =========================================
+  // ======================================
+  // START
+  // ======================================
 
   async function start() {
     installStyles();
-    populateMonths(japanMonth());
-    updateGenreTabs();
+    fillMonths(japanMonth());
+    updateTabs();
 
     ui.refresh.disabled = true;
     setStatus("CONNECTING TO SUPABASE...");
 
     try {
       await Promise.all([
-        connectSupabase(),
+        connect(),
         loadArtwork()
       ]);
 
       await loadRanking("initial");
-      startAutoRefresh();
 
+      startTimer();
     } catch (error) {
       console.error(
         "[AFTERHOURS] Startup failed:",
