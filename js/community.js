@@ -2,19 +2,36 @@
 "use strict";
 
 /*
-  AFTERHOURS STEP 20
-  GLOBAL COMMUNITY VOTING CHART
+  AFTERHOURS STEP 22
+  GLOBAL COMMUNITY CHART
 
-  - Supabase vote counts
-  - HIP-HOP / R&B switching
-  - Monthly ranking
-  - Artwork cache
-  - Refresh button
+  Features:
+  - HIP-HOP / R&B rankings
+  - Monthly vote totals
+  - Supabase authentication
+  - Automatic refresh every 30 seconds
+  - Refresh on tab return
+  - Manual refresh
+  - No unnecessary visual rerender
+  - Safe error handling
+
+  Existing charts and voting system
+  remain unchanged.
 */
 
 (() => {
+  // ========================================
+  // SETTINGS
+  // ========================================
+
+  const REFRESH_INTERVAL = 30_000;
+
   const CONFIG = window.AFTERHOURS_SUPABASE;
   const DATA = window.AFTERHOURS_DATA || {};
+
+  // ========================================
+  // HTML ELEMENTS
+  // ========================================
 
   const list = document.querySelector(
     "#community-list"
@@ -44,15 +61,26 @@
     "#refresh-chart"
   );
 
+  // ========================================
+  // APPLICATION STATE
+  // ========================================
+
   let db = null;
   let genre = "hiphop";
   let artworkMap = {};
-  let requestNumber = 0;
-  let isReady = false;
 
-  // ====================================
-  // DATE
-  // ====================================
+  let isReady = false;
+  let requestNumber = 0;
+
+  let refreshTimer = null;
+  let lastRenderSignature = null;
+
+  let lastSuccessfulUpdate = 0;
+  let hasLoadedRanking = false;
+
+  // ========================================
+  // DATE FUNCTIONS
+  // ========================================
 
   function currentMonthJapan() {
     const parts = new Intl.DateTimeFormat(
@@ -106,12 +134,27 @@
     ).format(date).toUpperCase();
   }
 
-  const CURRENT_MONTH = currentMonthJapan();
+  function japanTimeLabel() {
+    return new Intl.DateTimeFormat(
+      "en-GB",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Tokyo"
+      }
+    ).format(new Date());
+  }
 
   function initializeMonths() {
+    const current = currentMonthJapan();
+
+    monthSelect.replaceChildren();
+
     for (let i = 0; i < 12; i++) {
       const value = monthBefore(
-        CURRENT_MONTH,
+        current,
         i
       );
 
@@ -125,12 +168,12 @@
       monthSelect.append(option);
     }
 
-    monthSelect.value = CURRENT_MONTH;
+    monthSelect.value = current;
   }
 
-  // ====================================
-  // COMMON FUNCTIONS
-  // ====================================
+  // ========================================
+  // UTILITIES
+  // ========================================
 
   function setStatus(message, error = false) {
     status.textContent = message;
@@ -169,6 +212,10 @@
       : [];
   }
 
+  // ========================================
+  // GENRE TABS
+  // ========================================
+
   function updateTabs() {
     const isHiphop = genre === "hiphop";
 
@@ -193,9 +240,9 @@
     );
   }
 
-  // ====================================
-  // ARTWORK
-  // ====================================
+  // ========================================
+  // ARTWORK CACHE
+  // ========================================
 
   async function loadArtworkMap() {
     try {
@@ -222,7 +269,7 @@
 
     } catch (error) {
       console.warn(
-        "Artwork unavailable:",
+        "Artwork cache unavailable:",
         error
       );
     }
@@ -245,7 +292,7 @@
       return box;
     }
 
-    // Verify this cover belongs to this song.
+    // Check artwork belongs to the song.
     if (
       normalize(saved.title) !==
         normalize(track.title) ||
@@ -255,36 +302,34 @@
       return box;
     }
 
-    const imageUrl = safeUrl(
-      saved.image
-    );
+    const imageUrl = safeUrl(saved.image);
 
     if (!imageUrl) {
       return box;
     }
 
-    const img = document.createElement(
+    const image = document.createElement(
       "img"
     );
 
-    img.alt = `${track.title} album artwork`;
-    img.loading = "lazy";
-    img.decoding = "async";
+    image.alt = `${track.title} album artwork`;
+    image.loading = "lazy";
+    image.decoding = "async";
 
-    img.onload = () => {
+    image.onload = () => {
       if (box.isConnected) {
-        box.replaceChildren(img);
+        box.replaceChildren(image);
       }
     };
 
-    img.src = imageUrl;
+    image.src = imageUrl;
 
     return box;
   }
 
-  // ====================================
-  // RANKING DISPLAY
-  // ====================================
+  // ========================================
+  // CREATE RANKING ROW
+  // ========================================
 
   function createRow(track, votes, rank) {
     const row = document.createElement(
@@ -354,13 +399,36 @@
     return row;
   }
 
-  function renderRanking(rows) {
-    list.replaceChildren();
+  // ========================================
+  // RENDER RANKING
+  // ========================================
 
-    empty.hidden = rows.length !== 0;
+  function renderRanking(rows) {
+    const signature = JSON.stringify({
+      genre,
+      month: monthSelect.value,
+      rows: rows.map(item => [
+        item.track.id,
+        item.votes
+      ])
+    });
+
+    // Avoid unnecessary DOM and artwork reloads
+    // when the ranking has not changed.
+    if (
+      signature === lastRenderSignature &&
+      hasLoadedRanking
+    ) {
+      return;
+    }
+
+    lastRenderSignature = signature;
+
+    const fragment =
+      document.createDocumentFragment();
 
     rows.forEach((item, index) => {
-      list.append(
+      fragment.append(
         createRow(
           item.track,
           item.votes,
@@ -368,22 +436,82 @@
         )
       );
     });
+
+    list.replaceChildren(fragment);
+
+    empty.hidden = rows.length !== 0;
+
+    hasLoadedRanking = true;
   }
 
-  // ====================================
-  // SUPABASE VOTE COUNT
-  // ====================================
+  // ========================================
+  // VOTE DATA PROCESSING
+  // ========================================
 
-  async function loadRanking() {
+  function createRanking(voteData) {
+    const totals = new Map();
+
+    for (const item of voteData || []) {
+      const votes = Number(item.votes);
+
+      if (
+        typeof item.track_id === "string" &&
+        Number.isSafeInteger(votes) &&
+        votes > 0
+      ) {
+        totals.set(
+          item.track_id,
+          votes
+        );
+      }
+    }
+
+    return getTracks()
+      .map(track => ({
+        track,
+        votes: totals.get(track.id) || 0
+      }))
+      .filter(item => item.votes > 0)
+      .sort((a, b) => {
+        if (b.votes !== a.votes) {
+          return b.votes - a.votes;
+        }
+
+        return a.track.id.localeCompare(
+          b.track.id
+        );
+      })
+      .slice(0, 50);
+  }
+
+  // ========================================
+  // LOAD RANKING FROM SUPABASE
+  // ========================================
+
+  async function loadRanking(
+    reason = "manual"
+  ) {
     if (!isReady || !db) {
       return;
     }
 
-    const thisRequest = ++requestNumber;
+    // Do not automatically query a hidden tab.
+    if (
+      reason === "auto" &&
+      document.hidden
+    ) {
+      return;
+    }
 
+    const thisRequest = ++requestNumber;
     const selectedMonth = monthSelect.value;
 
-    setStatus("LOADING VOTES...");
+    if (reason === "auto") {
+      setStatus("SYNCING VOTES...");
+    } else {
+      setStatus("LOADING VOTES...");
+    }
+
     refreshButton.disabled = true;
 
     try {
@@ -398,51 +526,34 @@
         throw error;
       }
 
-      // Prevent an old request replacing new results.
+      // Another request has started.
+      // Ignore outdated response.
       if (thisRequest !== requestNumber) {
         return;
       }
 
-      const totals = new Map();
-
-      for (const item of data || []) {
-        const votes = Number(item.votes);
-
-        if (
-          typeof item.track_id === "string" &&
-          Number.isSafeInteger(votes) &&
-          votes > 0
-        ) {
-          totals.set(
-            item.track_id,
-            votes
-          );
-        }
-      }
-
-      const ranked = getTracks()
-        .map(track => ({
-          track,
-          votes: totals.get(track.id) || 0
-        }))
-        .filter(item => item.votes > 0)
-        .sort((a, b) => {
-          if (b.votes !== a.votes) {
-            return b.votes - a.votes;
-          }
-
-          // Use track ID to break tied votes.
-          return a.track.id.localeCompare(
-            b.track.id
-          );
-        })
-        .slice(0, 50);
+      const ranked = createRanking(data);
 
       renderRanking(ranked);
 
+      lastSuccessfulUpdate = Date.now();
+
+      const time = japanTimeLabel();
+
       setStatus(
-        `${ranked.length} TRACKS / ` +
-        monthLabel(selectedMonth)
+        `● LIVE / ${ranked.length} TRACKS` +
+        ` / ${time} JST`
+      );
+
+      console.info(
+        "[AFTERHOURS] Community chart updated",
+        {
+          reason,
+          genre,
+          month: selectedMonth,
+          tracks: ranked.length,
+          updatedAt: time
+        }
       );
 
     } catch (error) {
@@ -451,17 +562,27 @@
       }
 
       console.error(
-        "Community ranking error:",
+        "[AFTERHOURS] Ranking sync failed:",
         error
       );
 
-      list.replaceChildren();
-      empty.hidden = true;
+      // Preserve the existing ranking on failure.
+      // Next automatic update will retry.
+      if (hasLoadedRanking) {
+        setStatus(
+          "SYNC FAILED / RETRYING",
+          true
+        );
+      } else {
+        list.replaceChildren();
 
-      setStatus(
-        "DATABASE ERROR / PLEASE RETRY",
-        true
-      );
+        empty.hidden = true;
+
+        setStatus(
+          "DATABASE ERROR / PLEASE RETRY",
+          true
+        );
+      }
 
     } finally {
       if (thisRequest === requestNumber) {
@@ -470,9 +591,9 @@
     }
   }
 
-  // ====================================
-  // DATABASE CONNECTION
-  // ====================================
+  // ========================================
+  // SUPABASE CONNECTION
+  // ========================================
 
   async function connectSupabase() {
     if (
@@ -481,13 +602,13 @@
       !CONFIG.publishableKey
     ) {
       throw new Error(
-        "Supabase configuration not found."
+        "Supabase configuration is missing."
       );
     }
 
     if (!window.supabase?.createClient) {
       throw new Error(
-        "Supabase SDK not loaded."
+        "Supabase SDK failed to load."
       );
     }
 
@@ -508,13 +629,14 @@
       throw session.error;
     }
 
-    // Same anonymous session as voting pages.
+    // Reuse voting-page session.
+    // Create an anonymous user only if needed.
     if (!session.data.session) {
-      const signIn = await db.auth
+      const result = await db.auth
         .signInAnonymously();
 
-      if (signIn.error) {
-        throw signIn.error;
+      if (result.error) {
+        throw result.error;
       }
     }
 
@@ -528,51 +650,156 @@
     isReady = true;
   }
 
-  // ====================================
-  // CONTROLS
-  // ====================================
+  // ========================================
+  // AUTOMATIC UPDATES
+  // ========================================
+
+  function startAutoRefresh() {
+    // Prevent multiple timers.
+    if (refreshTimer !== null) {
+      clearInterval(refreshTimer);
+    }
+
+    refreshTimer = setInterval(() => {
+      if (
+        !isReady ||
+        document.hidden
+      ) {
+        return;
+      }
+
+      // Skip this cycle while a request
+      // is already running.
+      if (refreshButton.disabled) {
+        return;
+      }
+
+      loadRanking("auto");
+
+    }, REFRESH_INTERVAL);
+
+    console.info(
+      "[AFTERHOURS] Auto refresh enabled:",
+      REFRESH_INTERVAL / 1000,
+      "seconds"
+    );
+  }
+
+  function stopAutoRefresh() {
+    if (refreshTimer !== null) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+  }
+
+  // ========================================
+  // TAB VISIBILITY
+  // ========================================
+
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (!isReady || document.hidden) {
+        return;
+      }
+
+      const elapsed = (
+        Date.now() - lastSuccessfulUpdate
+      );
+
+      // Refresh immediately when returning
+      // after at least 10 seconds.
+      if (
+        !lastSuccessfulUpdate ||
+        elapsed >= 10_000
+      ) {
+        loadRanking("return");
+      }
+    }
+  );
+
+  // ========================================
+  // USER CONTROLS
+  // ========================================
 
   hiphopTab.addEventListener(
     "click",
     () => {
+      if (genre === "hiphop") {
+        return;
+      }
+
       genre = "hiphop";
+
       updateTabs();
-      loadRanking();
+      loadRanking("genre");
     }
   );
 
   rnbTab.addEventListener(
     "click",
     () => {
+      if (genre === "rnb") {
+        return;
+      }
+
       genre = "rnb";
+
       updateTabs();
-      loadRanking();
+      loadRanking("genre");
     }
   );
 
   monthSelect.addEventListener(
     "change",
-    loadRanking
+    () => {
+      loadRanking("month");
+    }
   );
 
   refreshButton.addEventListener(
     "click",
-    loadRanking
+    () => {
+      loadRanking("manual");
+    }
   );
 
-  // ====================================
-  // START
-  // ====================================
+  // ========================================
+  // PAGE CLEANUP
+  // ========================================
+
+  window.addEventListener(
+    "pagehide",
+    () => {
+      stopAutoRefresh();
+    }
+  );
+
+  window.addEventListener(
+    "pageshow",
+    (event) => {
+      // Restore timer after back/forward
+      // cache navigation.
+      if (event.persisted && isReady) {
+        startAutoRefresh();
+        loadRanking("return");
+      }
+    }
+  );
+
+  // ========================================
+  // START APPLICATION
+  // ========================================
 
   async function start() {
     initializeMonths();
     updateTabs();
 
+    refreshButton.disabled = true;
+
     setStatus(
       "CONNECTING TO SUPABASE..."
     );
-
-    refreshButton.disabled = true;
 
     try {
       await Promise.all([
@@ -580,11 +807,13 @@
         loadArtworkMap()
       ]);
 
-      await loadRanking();
+      await loadRanking("initial");
+
+      startAutoRefresh();
 
     } catch (error) {
       console.error(
-        "Community startup failed:",
+        "[AFTERHOURS] Startup failed:",
         error
       );
 
