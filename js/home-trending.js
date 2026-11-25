@@ -629,10 +629,18 @@
       throw new Error("Supabase configuration missing");
     }
 
-    state.db = window.supabase.createClient(
-      config.url,
-      config.publishableKey
-    );
+    state.db = window.__AFTERHOURS_SHARED_DB ||
+      (window.__AFTERHOURS_SHARED_DB =
+        window.supabase.createClient(
+          config.url,
+          config.publishableKey,
+          {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true
+            }
+          }
+        ));
 
     const session = await state.db.auth.getSession();
 

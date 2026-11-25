@@ -915,16 +915,18 @@ async function initCloud() {
       );
     }
 
-    db = window.supabase.createClient(
-      config.url,
-      config.publishableKey,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true
-        }
-      }
-    );
+    db = window.__AFTERHOURS_SHARED_DB ||
+      (window.__AFTERHOURS_SHARED_DB =
+        window.supabase.createClient(
+          config.url,
+          config.publishableKey,
+          {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true
+            }
+          }
+        ));
 
     const sessionResult =
       await db.auth.getSession();
