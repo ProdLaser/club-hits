@@ -1,0 +1,132 @@
+/*
+ * AFTERHOURS v1.0
+ * STEP 29 — FINAL DESIGN POLISH
+ *
+ * Non-destructive visual and accessibility improvements.
+ */
+
+:root {
+  --ah-focus: #40e5ed;
+  --ah-text: #f5f7ff;
+}
+
+/* Consistent sizing */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+
+body {
+  min-width: 0;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Media safety */
+img,
+video,
+svg {
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+/* Clear keyboard focus */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--ah-focus);
+  outline-offset: 3px;
+}
+
+/* Improve readable text wrapping */
+h1, h2, h3, h4 {
+  overflow-wrap: break-word;
+}
+
+p {
+  overflow-wrap: break-word;
+}
+
+/* Avoid clipped anchor destinations */
+[id] {
+  scroll-margin-top: 90px;
+}
+
+/* Interactive feedback */
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled),
+  a {
+    transition:
+      color 180ms ease,
+      background-color 180ms ease,
+      border-color 180ms ease,
+      opacity 180ms ease;
+  }
+}
+
+/* Existing TOP 3 spotlight */
+#ah-top3,
+#ah-home-trending {
+  min-width: 0;
+}
+
+#ah-top3 .ah-top3-card,
+#ah-home-trending .aht-card {
+  min-width: 0;
+}
+
+#ah-top3 .ah-top3-cover img,
+#ah-home-trending .aht-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Responsive layout safety */
+@media (max-width: 700px) {
+  #ah-top3,
+  #ah-home-trending {
+    max-width: 100%;
+  }
+
+  #ah-home-trending .aht-header {
+    gap: 16px;
+  }
+
+  #ah-home-trending .aht-tabs {
+    max-width: 100%;
+  }
+
+  #ah-home-trending .aht-link {
+    text-align: center;
+  }
+
+  /* Keep fixed navigation above page content */
+  #ah-mobile-navigation {
+    z-index: 99999;
+  }
+}
+
+/* Respect system accessibility preferences */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
